@@ -1,0 +1,45 @@
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <android.support.design.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/root"
+        android:animateLayoutChanges="true">
+
+        <android.support.v7.widget.RecyclerView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/todo_container"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:id="@+id/emptyMessage"
+            android:text="Nothing to show.\nAdd something or change the filter settings."
+            android:textAlignment="center"
+            android:visibility="gone"
+            />
+
+        <android.support.v4.widget.ContentLoadingProgressBar
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/spinner"
+            />
+
+        <android.support.design.widget.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/do_enter_new"
+            android:src="@drawable/add_white"
+            app:useCompatPadding="true"
+            app:fabSize="normal"
+            app:layout_anchor="@id/todo_container"
+            app:layout_anchorGravity="bottom|end"
+            />
+
+    </android.support.design.widget.CoordinatorLayout>
+
+</layout>

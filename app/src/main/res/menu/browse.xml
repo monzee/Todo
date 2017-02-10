@@ -1,0 +1,18 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/filter"
+        android:title="Filter"
+        android:icon="?iconFilter"
+        app:showAsAction="always"
+        >
+        <menu>
+            <group android:checkableBehavior="single" >
+                <item android:id="@+id/completed_only" android:title="Completed" />
+                <item android:id="@+id/active_only" android:title="Active" />
+                <item android:id="@+id/both" android:title="Both" />
+            </group>
+        </menu>
+    </item>
+    <item android:id="@+id/populate" android:title="Populate" />
+    <item android:id="@+id/delete" android:title="Delete completed" />
+</menu>

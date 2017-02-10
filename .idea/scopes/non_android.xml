@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="non-android" pattern="file[backend]:*/||file[presentation]:*/" />
+</component>
