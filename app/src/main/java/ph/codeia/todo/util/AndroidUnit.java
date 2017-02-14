@@ -1,8 +1,7 @@
 package ph.codeia.todo.util;
 
-import android.content.Context;
 import android.os.Handler;
-import android.widget.Toast;
+import android.os.Looper;
 
 import java.util.concurrent.Executor;
 
@@ -14,19 +13,21 @@ public class AndroidUnit<
         V>
         extends Mvp.Unit<S, A, V> {
 
-    private final Context context;
     private final Handler handler;
     private final Mvp.ErrorHandler<V> errorHandler;
 
-    public AndroidUnit(Context context, S state) {
-        this(context, state, null);
+    public AndroidUnit(S state) {
+        this(state, null);
     }
 
-    public AndroidUnit(Context context, S state, Mvp.ErrorHandler<V> errorHandler) {
+    public AndroidUnit(S state, Mvp.ErrorHandler<V> errorHandler) {
+        this(new Handler(Looper.getMainLooper()), state, errorHandler);
+    }
+
+    public AndroidUnit(Handler handler, S state, Mvp.ErrorHandler<V> errorHandler) {
         super(state);
-        this.context = context;
+        this.handler = handler;
         this.errorHandler = errorHandler;
-        handler = new Handler(context.getMainLooper());
     }
 
     @Override

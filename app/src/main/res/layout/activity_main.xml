@@ -7,7 +7,7 @@
         android:id="@+id/root"
         android:animateLayoutChanges="true">
 
-        <android.support.v7.widget.RecyclerView
+        <ph.codeia.todo.index.TodoItems
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/todo_container"
@@ -23,10 +23,13 @@
             android:visibility="gone"
             />
 
-        <android.support.v4.widget.ContentLoadingProgressBar
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:id="@+id/spinner"
+            android:visibility="gone"
+            style="?android:progressBarStyleLarge"
             />
 
         <android.support.design.widget.FloatingActionButton

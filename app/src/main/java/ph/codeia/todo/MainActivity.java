@@ -6,100 +6,118 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import ph.codeia.todo.data.TodoInMemory;
+import ph.codeia.todo.data.TodoRepository;
+import ph.codeia.todo.data.TodoSerialized;
+import ph.codeia.todo.databinding.ActivityMainBinding;
 import ph.codeia.todo.index.Index;
 import ph.codeia.todo.index.IndexActions;
-import ph.codeia.todo.data.TodoInMemory;
-import ph.codeia.todo.data.TodoPersistent;
-import ph.codeia.todo.data.TodoRepository;
-import ph.codeia.todo.databinding.ActivityMainBinding;
+import ph.codeia.todo.index.IndexScreen;
+import ph.codeia.todo.index.TodoItems;
 import ph.codeia.todo.util.AndroidUnit;
 
-public class MainActivity extends AppCompatActivity implements IndexScreen.Compromise {
+public class MainActivity extends AppCompatActivity {
 
     private static final Random RANDOM = new Random();
     private static final ExecutorService WORKER = Executors.newSingleThreadExecutor();
-    private static final Index.State ROOT = new Index.State(true, true, Collections.emptyList());
+    private static final Index.State ROOT = new Index.State(true, true, false, Collections.emptyList());
 
     private static class States {
         Index.State screen;
-        List<Index.Item> visible;
+        TodoItems.State visible;
     }
 
     private TodoRepository repo;
     private Index.Presenter presenter;
     private IndexScreen view;
+    private ActivityMainBinding widgets;
     private AndroidUnit<Index.State, Index.Action, Index.View> screen;
-    private AndroidUnit<IndexScreen.VisibleItems, IndexScreen.ListAction, IndexScreen> recycler;
+    private AndroidUnit<TodoItems.State, TodoItems.Action, RecyclerView.Adapter<?>> visible;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ActivityMainBinding widgets = DataBindingUtil.setContentView(this, R.layout.activity_main);
-        view = new IndexScreen(this, widgets, this);
+        widgets = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        view = new IndexScreen(this, widgets, this::apply);
         try {
-            repo = new TodoPersistent(new File(getCacheDir(), "todos"));
+            repo = new TodoSerialized(new File(getCacheDir(), "todos"));
         } catch (IOException | ClassNotFoundException e) {
             view.tell(e.getMessage());
             repo = new TodoInMemory();
-            populate(repo);
         }
         presenter = new IndexActions(repo);
+
+        widgets.doEnterNew.setOnClickListener(_v -> apply(presenter.add()));
         widgets.todoContainer.setLayoutManager(new LinearLayoutManager(this));
         widgets.todoContainer.addItemDecoration(
                 new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
-        widgets.todoContainer.setAdapter(view.visible.adapter);
-        widgets.doEnterNew.setOnClickListener(_v -> apply(presenter.add()));
+        widgets.todoContainer.setController(new TodoItems.Controller() {
+            @Override
+            public void checked(int id, boolean on) {
+                MainActivity.this.apply(presenter.toggle(id, on));
+            }
+
+            @Override
+            public void selected(int id) {
+                MainActivity.this.apply(presenter.details(id));
+            }
+
+            @Override
+            public void apply(TodoItems.Action action) {
+                visible.apply(action, widgets.todoContainer.getAdapter(), WORKER);
+            }
+        });
+        States saved = (States) getLastCustomNonConfigurationInstance();
+        if (saved == null) {
+            screen = new AndroidUnit<>(ROOT);
+            visible = new AndroidUnit<>(new TodoItems.State());
+            widgets.todoContainer.init();
+            apply(presenter.load());
+        } else {
+            screen = new AndroidUnit<>(saved.screen);
+            visible = new AndroidUnit<>(saved.visible);
+            widgets.todoContainer.init();
+            apply(presenter.refresh());
+        }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        if (screen != null) {
-            screen.start();
-            recycler.start();
-            return;
-        }
-        recycler = new AndroidUnit<>(this, view.visible);
-        States saved = (States) getLastCustomNonConfigurationInstance();
-        if (saved == null) {
-            screen = new AndroidUnit<>(this, ROOT);
-            apply(presenter.load());
-        } else {
-            screen = new AndroidUnit<>(this, saved.screen);
-            view.visible.setItems(saved.visible);
-            apply(presenter.refresh());
-        }
+        visible.start(widgets.todoContainer.getAdapter());
+        screen.start(view);
+        apply(Index.Action.FLUSH);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         screen.stop();
-        recycler.stop();
+        visible.stop();
     }
 
     @Override
     public Object onRetainCustomNonConfigurationInstance() {
         States s = new States();
         s.screen = screen.state();
-        s.visible = recycler.state().items;
+        s.visible = visible.state();
         return s;
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.browse, menu);
+        getMenuInflater().inflate(R.menu.index, menu);
         return true;
     }
 
@@ -120,8 +138,7 @@ public class MainActivity extends AppCompatActivity implements IndexScreen.Compr
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.populate:
-                populate(repo);
-                apply(presenter.load());
+                apply(populate(repo));
                 break;
             case R.id.delete:
                 apply(presenter.deleteCompleted());
@@ -144,36 +161,27 @@ public class MainActivity extends AppCompatActivity implements IndexScreen.Compr
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public void checked(int id, boolean on) {
-        apply(presenter.toggle(id, on));
-    }
-
-    @Override
-    public void selected(int id) {
-        apply(presenter.details(id));
-    }
-
-    @Override
-    public void apply(IndexScreen.ListAction action) {
-        recycler.apply(action, view, WORKER);
-    }
-
-    @Override
-    public void apply(Index.Action action) {
+    void apply(Index.Action action) {
         screen.apply(action, view, WORKER);
     }
 
     @SuppressLint("NewApi")
-    private void populate(TodoRepository repo) {
-        apply((Index.Action) (state, view) -> state.async(() -> {
-            try (TodoRepository.Transactional t = repo.transact()) {
-                t.add("quick jumps", "The quick brown fox jumps over the lazy dog.", RANDOM.nextBoolean());
-                t.add("learn latin", "Lorem ipsum dolor sit amet", RANDOM.nextBoolean());
-                t.add("something good", "foo bar baz bat quux", RANDOM.nextBoolean());
-            }
-            return Index.Action.NOOP;
-        }));
+    private Index.Action populate(TodoRepository repo) {
+        return (state, view) -> {
+            view.spin(true);
+            return state.async(() -> {
+                Thread.sleep(3000);
+                try (TodoRepository.Transactional t = repo.transact()) {
+                    t.add("quick jumps", "The quick brown fox jumps over the lazy dog.", RANDOM.nextBoolean());
+                    t.add("learn latin", "Lorem ipsum dolor sit amet", RANDOM.nextBoolean());
+                    t.add("something good", "foo bar baz bat quux", RANDOM.nextBoolean());
+                }
+                return (futureState, futureView) -> {
+                    futureView.spin(false);
+                    return futureState.plus(presenter.load());
+                };
+            });
+        };
     }
 
 }

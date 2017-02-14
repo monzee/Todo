@@ -15,13 +15,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ph.codeia.todo.Mvp;
-import ph.codeia.todo.Repeating;
 import ph.codeia.todo.Stepper;
 import ph.codeia.todo.data.TodoInMemory;
 import ph.codeia.todo.data.TodoRepository;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.*;
 
 @SuppressWarnings("StatementWithEmptyBody")
@@ -37,7 +35,7 @@ public class Specs {
 
     @Before
     public void setup() {
-        index = new Stepper<>(new Index.State(true, true, Collections.emptyList()));
+        index = new Stepper<>(new Index.State(true, true, false, Collections.emptyList()));
         m = new TodoInMemory();
         p = new IndexActions(m);
         v = new FakeView();
@@ -58,7 +56,7 @@ public class Specs {
     }
 
     @Test
-    public void should_build_cache_immediately_after_fetching() {
+    public void should_build_cache_after_fetching() {
         m.add("foo", "FOO", false);
         m.add("bar", "BAR", true);
         m.add("baz", "BAZ", false);
@@ -86,26 +84,32 @@ public class Specs {
     }
 
     @Test
-    public void should_update_a_single_item_when_its_status_is_changed() {
+    public void should_show_updated_item_when_its_status_is_changed() {
         TodoRepository.Todo e1, e2;
+        Optional<Index.Item> item;
         m.add("extra", "FOO", false);
         e1 = m.add("bar", "BAR", true);
         m.add("extra", "FOO", false);
+        m.add("extra", "FOO", false);
+        index.apply(p.load(), v);
+        while (index.step(v));
+
+        index.apply(p.toggle(e1.id, !e1.completed), v);
+        while (index.step(v));
+        item = v.s(i -> i.id() == e1.id).findFirst();
+        assertTrue(item.isPresent());
+        assertNotEquals(e1.completed, item.get().completed());
+
         m.add("extra", "FOO", false);
         m.add("extra", "FOO", false);
         e2 = m.add("baz", "BAZ", false);
         m.add("extra", "FOO", false);
         m.add("extra", "FOO", false);
-        m.add("extra", "FOO", false);
-
         index.apply(p.load(), v);
         while (index.step(v));
-        index.apply(p.toggle(e1.id, !e1.completed), v);
+
         index.apply(p.toggle(e2.id, !e2.completed), v);
         while (index.step(v));
-        Optional<Index.Item> item = v.s(i -> i.id() == e1.id).findFirst();
-        assertTrue(item.isPresent());
-        assertNotEquals(e1.completed, item.get().completed());
         item = v.s(i -> i.id() == e2.id).findFirst();
         assertTrue(item.isPresent());
         assertNotEquals(e2.completed, item.get().completed());
@@ -164,7 +168,7 @@ public class Specs {
     }
 
     @Test
-    public void should_delete_from_repo_all_completed_when_asked() {
+    public void should_be_able_to_delete_all_completed_items() {
         List<Integer> complete = new ArrayList<>();
         m.add("extra", "FOO", false);
         m.add("extra", "FOO", false);
@@ -192,7 +196,7 @@ public class Specs {
 
     List<Integer> visibleIds() {
         return v.s()
-                .map(Repeating.Diffable::id)
+                .map(Index.Item::id)
                 .map(Long::intValue)
                 .collect(Collectors.toList());
     }

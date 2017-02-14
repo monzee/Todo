@@ -44,7 +44,7 @@ public class IndexActions implements Index.Presenter {
                     futureView.spin(false);
                     return futureState
                             .withCache(items)
-                            .async(refresh());
+                            .plus(refresh());
                 };
             });
         };
@@ -83,7 +83,7 @@ public class IndexActions implements Index.Presenter {
                     if (i != -1) {
                         items.set(i, new Item(e));
                     }
-                    return futureState.async(refresh());
+                    return futureState.plus(refresh());
                 };
             }
         });
@@ -102,7 +102,7 @@ public class IndexActions implements Index.Presenter {
         return (state, view) -> state
                 .withCompletedItemsShown(showCompleted)
                 .withActiveItemsShown(showActive)
-                .async(refresh());
+                .plus(refresh());
     }
 
     private Index.Action onConfirm() {
@@ -118,7 +118,7 @@ public class IndexActions implements Index.Presenter {
             final int deleted = count;
             return (futureState, futureView) -> {
                 futureView.tell("Deleted %d items.", deleted);
-                return futureState.async(load());
+                return futureState.plus(load());
             };
         });
     }

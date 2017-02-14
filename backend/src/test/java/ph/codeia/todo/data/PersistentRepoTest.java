@@ -19,14 +19,14 @@ public class PersistentRepoTest {
     public void strawman() throws IOException, ClassNotFoundException {
         File file = dir.newFile();
         assertTrue(file.delete());
-        TodoRepository repo = new TodoPersistent(file);
-        try (TodoPersistent write = repo.transact()) {
+        TodoRepository repo = new TodoSerialized(file);
+        try (TodoSerialized write = repo.transact()) {
             write.add("first", "first entry", true);
             write.add("second", "second entry", false);
             write.add("third", "third entry", true);
         }
 
-        repo = new TodoPersistent(file);
+        repo = new TodoSerialized(file);
         TodoRepository.Todo e;
         e = repo.oneWithId(1);
         assertEquals("first", e.title);
@@ -46,7 +46,7 @@ public class PersistentRepoTest {
     public void can_save_outside_a_transaction() throws IOException, ClassNotFoundException {
         File file = dir.newFile();
         assertTrue(file.delete());
-        TodoRepository repo = new TodoPersistent(file);
+        TodoRepository repo = new TodoSerialized(file);
         TodoRepository.Todo e;
 
         repo.add("asdf", "zxcv", false);
@@ -66,7 +66,7 @@ public class PersistentRepoTest {
     public void can_edit_row() throws IOException, ClassNotFoundException {
         File file = dir.newFile();
         assertTrue(file.delete());
-        TodoRepository repo = new TodoPersistent(file);
+        TodoRepository repo = new TodoSerialized(file);
         TodoRepository.Todo e;
 
         repo.add("asdf", "qwer", false);
@@ -86,7 +86,7 @@ public class PersistentRepoTest {
         TodoRepository repo;
         TodoRepository.Todo e;
 
-        repo = new TodoPersistent(file);
+        repo = new TodoSerialized(file);
         try (TodoRepository.Transactional r = repo.transact()) {
             r.add("foo", "abc", false);
             r.add("bar", "def", false);
@@ -97,8 +97,8 @@ public class PersistentRepoTest {
         repo.delete(2);
         assertNull(repo.oneWithId(2));
 
-        repo = new TodoPersistent(file);
-        try (TodoPersistent r = repo.transact()) {
+        repo = new TodoSerialized(file);
+        try (TodoSerialized r = repo.transact()) {
             r.add("baz", "abc", false);
         }
         e = repo.oneWithId(3);

@@ -41,7 +41,7 @@ public interface Mvp {
     interface State<
             S extends State<S, A>,
             A extends Action<S, A, ?>>
-            extends Iterable<Future<A>> {
+    extends Iterable<Future<A>> {
         S async(Future<A> future);
     }
 
@@ -56,14 +56,14 @@ public interface Mvp {
         void handle(Throwable error, V view);
     }
 
-    abstract class BaseState<
+    class BaseState<
             S extends BaseState<S, A>,
             A extends Action<S, A, ?>>
-            implements State<S, A> {
+    implements State<S, A> {
 
         protected Queue<Future<A>> futures = new ConcurrentLinkedQueue<>();
 
-        public S async(A action) {
+        public S plus(A action) {
             return async(Unit.now(action));
         }
 
@@ -93,7 +93,7 @@ public interface Mvp {
             S extends State<S, A>,
             A extends Action<S, A, V>,
             V>
-            implements ErrorHandler<V> {
+    implements ErrorHandler<V> {
 
         public static <A> Future<A> now(A action) {
             FutureTask<A> future = new FutureTask<>(() -> action);
@@ -116,8 +116,9 @@ public interface Mvp {
             return state;
         }
 
-        public void start() {
+        public boolean start(V view) {
             isStopped = false;
+            return clearBacklog(view);
         }
 
         public void stop() {
@@ -144,6 +145,24 @@ public interface Mvp {
                     });
                 }
             }
+        }
+
+        protected boolean clearBacklog(V view) {
+            boolean hasPending = false;
+            for (Iterator<Future<A>> it = state.iterator(); it.hasNext();) {
+                Future<A> future = it.next();
+                if (future.isDone()) {
+                    it.remove();
+                    try {
+                        state = future.get().fold(state, view);
+                    } catch (InterruptedException | ExecutionException e) {
+                        handle(e, view);
+                    }
+                } else {
+                    hasPending = true;
+                }
+            }
+            return hasPending;
         }
     }
 

@@ -5,7 +5,7 @@ import java.util.Date;
 
 import ph.codeia.todo.data.TodoRepository;
 
-public class Item implements Index.Item {
+class Item implements Index.Item {
 
     private final TodoRepository.Todo todo;
 
