@@ -4,10 +4,9 @@
     <android.support.design.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/root"
-        android:animateLayoutChanges="true">
+        android:id="@+id/root">
 
-        <ph.codeia.todo.index.TodoItems
+        <android.support.v7.widget.RecyclerView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/todo_container"
@@ -23,25 +22,33 @@
             android:visibility="gone"
             />
 
-        <ProgressBar
+        <FrameLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:id="@+id/spinner"
-            android:visibility="gone"
-            style="?android:progressBarStyleLarge"
-            />
-
-        <android.support.design.widget.FloatingActionButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/do_enter_new"
-            android:src="@drawable/add_white"
-            app:useCompatPadding="true"
-            app:fabSize="normal"
             app:layout_anchor="@id/todo_container"
             app:layout_anchorGravity="bottom|end"
-            />
+            app:layout_dodgeInsetEdges="bottom"
+            >
+
+            <android.support.design.widget.FloatingActionButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/do_enter_new"
+                android:src="@drawable/add_white"
+                app:fabSize="normal"
+                app:useCompatPadding="true"
+                />
+
+            <ProgressBar
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:id="@+id/spinner"
+                android:visibility="gone"
+                style="?android:progressBarStyleLarge"
+                />
+
+        </FrameLayout>
 
     </android.support.design.widget.CoordinatorLayout>
 

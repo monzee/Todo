@@ -15,15 +15,22 @@ public class IndexScreen implements Index.View {
 
     public interface Compromise {
         void apply(Index.Action action);
+        void applyList(TodoAdapter.Action action);
     }
 
     private final Activity activity;
     private final ActivityMainBinding widgets;
+    private final TodoAdapter adapter;
     private final Compromise compromise;
 
-    public IndexScreen(Activity activity, ActivityMainBinding widgets, Compromise compromise) {
+    public IndexScreen(
+            Activity activity,
+            ActivityMainBinding widgets,
+            TodoAdapter adapter,
+            Compromise compromise) {
         this.activity = activity;
         this.widgets = widgets;
+        this.adapter = adapter;
         this.compromise = compromise;
     }
 
@@ -34,13 +41,13 @@ public class IndexScreen implements Index.View {
     }
 
     @Override
-    public void show(List<Index.Item> items) {
-        widgets.todoContainer.setItems(items);
-        if (items.isEmpty()) {
+    public void show(List<Index.Item> newItems) {
+        if (newItems.isEmpty()) {
             widgets.emptyMessage.setVisibility(View.VISIBLE);
         } else {
             widgets.emptyMessage.setVisibility(View.GONE);
         }
+        compromise.applyList(adapter.setItems(newItems));
     }
 
     @Override

@@ -63,7 +63,7 @@ public class TodoSerialized implements TodoRepository.Transactional {
     @Override
     public TodoSerialized transact() {
         if (inTransaction()) {
-            throw new IllegalStateException("nested transactions not supported");
+            throw new UnsupportedOperationException("nested transactions");
         }
         inTransaction.set(true);
         return this;
@@ -78,13 +78,15 @@ public class TodoSerialized implements TodoRepository.Transactional {
 
     @Override
     public void close() throws IOException, ClassNotFoundException {
-        if (cancelled) {
-            load();
-        } else {
-            save();
+        if (inTransaction()) {
+            if (cancelled) {
+                load();
+            } else {
+                save();
+            }
+            inTransaction.set(false);
+            cancelled = false;
         }
-        inTransaction.set(false);
-        cancelled = false;
     }
 
     private boolean inTransaction() {

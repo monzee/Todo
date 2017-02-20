@@ -59,7 +59,7 @@ public class TodoInMemory implements TodoRepository.Transactional, Serializable 
      */
     @Override
     public synchronized Todo add(String title, String description, boolean completed) {
-        Todo item = new Todo(counter.getAndIncrement(), title, description, completed, new Date());
+        Todo item = new Todo(nextId(), title, description, completed, new Date());
         add(item);
         return item;
     }
@@ -74,7 +74,7 @@ public class TodoInMemory implements TodoRepository.Transactional, Serializable 
         if (byId.containsKey(item.id)) {
             data.set(byId.get(item.id), item);
         } else {
-            add(item.title, item.description, item.completed);
+            add(item);
         }
     }
 
@@ -130,5 +130,24 @@ public class TodoInMemory implements TodoRepository.Transactional, Serializable 
         return data.size() - 1;
     }
 
+    /**
+     * O(log n)
+     *
+     * This is used by {@link #add(String, String, boolean)} and since
+     * {@link #add(Todo)} (which it calls eventually) is O(log n) anyway, might
+     * as well make the id generation O(log n). This would make it ok to put
+     * entities with any id that isn't already taken.
+     *
+     * @return an id guaranteed to be unique.
+     */
+    private int nextId() {
+        int id;
+        synchronized (byId) {
+            do {
+                id = counter.getAndIncrement();
+            } while (byId.containsKey(id));
+        }
+        return id;
+    }
 
 }

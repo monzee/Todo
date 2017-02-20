@@ -24,7 +24,7 @@ import ph.codeia.todo.databinding.ActivityMainBinding;
 import ph.codeia.todo.index.Index;
 import ph.codeia.todo.index.IndexActions;
 import ph.codeia.todo.index.IndexScreen;
-import ph.codeia.todo.index.TodoItems;
+import ph.codeia.todo.index.TodoAdapter;
 import ph.codeia.todo.util.AndroidUnit;
 
 public class MainActivity extends AppCompatActivity {
@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static class States {
         Index.State screen;
-        TodoItems.State visible;
+        TodoAdapter.State visible;
     }
 
     private TodoRepository repo;
@@ -43,51 +43,56 @@ public class MainActivity extends AppCompatActivity {
     private IndexScreen view;
     private ActivityMainBinding widgets;
     private AndroidUnit<Index.State, Index.Action, Index.View> screen;
-    private AndroidUnit<TodoItems.State, TodoItems.Action, RecyclerView.Adapter<?>> visible;
+    private AndroidUnit<TodoAdapter.State, TodoAdapter.Action, RecyclerView> visible;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         widgets = DataBindingUtil.setContentView(this, R.layout.activity_main);
-        view = new IndexScreen(this, widgets, this::apply);
+
         try {
             repo = new TodoSerialized(new File(getCacheDir(), "todos"));
         } catch (IOException | ClassNotFoundException e) {
-            view.tell(e.getMessage());
             repo = new TodoInMemory();
         }
         presenter = new IndexActions(repo);
+        TodoAdapter todoAdapter = new TodoAdapter(new TodoAdapter.Controller() {
+            @Override
+            public void checked(int id, boolean on) {
+                apply(presenter.toggle(id, on));
+            }
+
+            @Override
+            public void selected(int id) {
+                apply(presenter.details(id));
+            }
+        });
+        view = new IndexScreen(this, widgets, todoAdapter, new IndexScreen.Compromise() {
+            @Override
+            public void apply(Index.Action action) {
+                MainActivity.this.apply(action);
+            }
+
+            @Override
+            public void applyList(TodoAdapter.Action action) {
+                MainActivity.this.applyList(action);
+            }
+        });
 
         widgets.doEnterNew.setOnClickListener(_v -> apply(presenter.add()));
         widgets.todoContainer.setLayoutManager(new LinearLayoutManager(this));
         widgets.todoContainer.addItemDecoration(
                 new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
-        widgets.todoContainer.setController(new TodoItems.Controller() {
-            @Override
-            public void checked(int id, boolean on) {
-                MainActivity.this.apply(presenter.toggle(id, on));
-            }
-
-            @Override
-            public void selected(int id) {
-                MainActivity.this.apply(presenter.details(id));
-            }
-
-            @Override
-            public void apply(TodoItems.Action action) {
-                visible.apply(action, widgets.todoContainer.getAdapter(), WORKER);
-            }
-        });
         States saved = (States) getLastCustomNonConfigurationInstance();
         if (saved == null) {
             screen = new AndroidUnit<>(ROOT);
-            visible = new AndroidUnit<>(new TodoItems.State());
-            widgets.todoContainer.init();
+            visible = new AndroidUnit<>(new TodoAdapter.State());
+            applyList(todoAdapter.init());
             apply(presenter.load());
         } else {
             screen = new AndroidUnit<>(saved.screen);
             visible = new AndroidUnit<>(saved.visible);
-            widgets.todoContainer.init();
+            applyList(todoAdapter.init());
             apply(presenter.refresh());
         }
     }
@@ -95,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        visible.start(widgets.todoContainer.getAdapter());
+        visible.start(widgets.todoContainer);
         screen.start(view);
         apply(Index.Action.FLUSH);
     }
@@ -165,7 +170,11 @@ public class MainActivity extends AppCompatActivity {
         screen.apply(action, view, WORKER);
     }
 
-    @SuppressLint("NewApi")
+    void applyList(TodoAdapter.Action action) {
+        visible.apply(action, widgets.todoContainer, WORKER);
+    }
+
+    @SuppressLint("NewApi")  // retrolambda can convert the try-let
     private Index.Action populate(TodoRepository repo) {
         return (state, view) -> {
             view.spin(true);
