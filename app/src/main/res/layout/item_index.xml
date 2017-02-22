@@ -1,40 +1,50 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <FrameLayout
+    <data>
+        <import type="android.support.v4.view.ViewCompat" />
+        <variable name="row" type="ph.codeia.todo.index.Index.Item" />
+        <variable name="controller" type="ph.codeia.todo.index.TodoAdapter.Controller" />
+    </data>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:background="?selectableItemBackground"
         android:clickable="true"
-        >
+        android:onClick="@{_ -> controller.selected(row.id)}"
+        tools:ignore="RtlSymmetry">
 
-        <CheckBox
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginLeft="12dp"
-            android:layout_marginStart="12dp"
-            android:layout_gravity="start|center_vertical"
-            android:paddingLeft="-12dp"
-            android:paddingStart="-12dp"
-            android:paddingRight="-12dp"
-            android:paddingEnd="-12dp"
+        <CheckedTextView
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
             android:id="@+id/is_completed"
+            android:checked="@{row.completed}"
+            android:button="@null"
+            android:drawableLeft="?android:listChoiceIndicatorMultiple"
+            android:drawableStart="?android:listChoiceIndicatorMultiple"
+            android:paddingLeft="10dp"
+            android:paddingStart="10dp"
+            android:onClick="@{_ -> controller.checked(row.id, !row.completed)}"
             tools:checked="true" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="48dp"
-            android:paddingStart="48dp"
-            android:paddingRight="12dp"
-            android:paddingEnd="12dp"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="12dp"
+            android:paddingLeft="12dp"
+            android:paddingStart="12dp"
+            android:paddingRight="12dp"
+            android:paddingEnd="12dp"
             android:id="@+id/the_title"
             android:textAppearance="?android:textAppearanceMedium"
+            android:text="@{row.title}"
             tools:text="the quick brown fox jumps over the lazy dog."
             />
 
-    </FrameLayout>
+    </LinearLayout>
 
 </layout>

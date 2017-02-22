@@ -14,8 +14,8 @@ import ph.codeia.todo.databinding.ItemIndexBinding;
 public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
 
     public interface Controller {
-        void checked(int id, boolean on);
-        void selected(int id);
+        void checked(long id, boolean on);
+        void selected(long id);
     }
 
     public interface Action extends Mvp.Action<State, Action, RecyclerView> {}
@@ -25,20 +25,11 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
     }
 
     public class RowView extends RecyclerView.ViewHolder {
-        final ItemIndexBinding widgets;
+        final ItemIndexBinding layout;
 
-        public RowView(ItemIndexBinding widgets) {
-            super(widgets.getRoot());
-            this.widgets = widgets;
-        }
-
-        public void bind(Index.Item row) {
-            widgets.theTitle.setText(row.title());
-            widgets.isCompleted.setChecked(row.completed());
-            itemView.setOnClickListener(_v ->
-                    controller.selected((int) getItemId()));
-            widgets.isCompleted.setOnCheckedChangeListener((_cb, checked) ->
-                    controller.checked((int) getItemId(), checked));
+        public RowView(ItemIndexBinding layout) {
+            super(layout.getRoot());
+            this.layout = layout;
         }
     }
 
@@ -52,12 +43,14 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
     @Override
     public RowView onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-        return new RowView(ItemIndexBinding.inflate(inflater, parent, false));
+        ItemIndexBinding layout = ItemIndexBinding.inflate(inflater, parent, false);
+        layout.setController(controller);
+        return new RowView(layout);
     }
 
     @Override
     public void onBindViewHolder(RowView holder, int position) {
-        holder.bind(state.items.get(position));
+        holder.layout.setRow(state.items.get(position));
     }
 
     @Override

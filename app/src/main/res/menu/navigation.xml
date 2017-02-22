@@ -1,0 +1,6 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/go_items" android:title="Items" />
+    <item android:id="@+id/go_stats" android:title="Statistics" />
+
+</menu>

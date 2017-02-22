@@ -1,5 +1,6 @@
 package ph.codeia.todo.index;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -44,6 +45,7 @@ public interface Index {
     }
 
     class State extends Mvp.BaseState<State, Action> {
+        public static final State ROOT = new State(true, true, false,Collections.emptyList());
         public final boolean showCompletedItems;
         public final boolean showActiveItems;
         public final boolean busy;

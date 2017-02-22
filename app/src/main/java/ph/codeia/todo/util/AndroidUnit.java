@@ -11,7 +11,7 @@ public class AndroidUnit<
         S extends Mvp.State<S, A>,
         A extends Mvp.Action<S, A, V>,
         V>
-        extends Mvp.Unit<S, A, V> {
+extends Mvp.Unit<S, A, V> {
 
     private final Handler handler;
     private final Mvp.ErrorHandler<V> errorHandler;

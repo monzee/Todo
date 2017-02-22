@@ -73,6 +73,8 @@ public class IndexActions implements Index.Presenter {
             if (todo == null) {
                 Mvp.Log.E.to(view, "no such id: %d", id);
                 return Index.Action.NOOP;
+            } else if (value == todo.completed) {
+                return Index.Action.NOOP;
             } else {
                 TodoRepository.Todo e = todo.withCompleted(value);
                 repo.put(e);

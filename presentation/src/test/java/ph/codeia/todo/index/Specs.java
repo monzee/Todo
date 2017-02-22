@@ -35,7 +35,7 @@ public class Specs {
 
     @Before
     public void setup() {
-        index = new Stepper<>(new Index.State(true, true, false, Collections.emptyList()));
+        index = new Stepper<>(Index.State.ROOT);
         m = new TodoInMemory();
         p = new IndexActions(m);
         v = new FakeView();
@@ -56,11 +56,12 @@ public class Specs {
     }
 
     @Test
-    public void should_build_cache_after_fetching() {
+    public void should_load_fetched_items_into_cache() {
         m.add("foo", "FOO", false);
         m.add("bar", "BAR", true);
         m.add("baz", "BAZ", false);
 
+        assertThat(index.state().cache, not(hasItem(anything())));
         index.apply(p.load(), v);
         assertTrue(index.step(v));
         assertEquals(3, index.state().cache.size());
@@ -84,7 +85,7 @@ public class Specs {
     }
 
     @Test
-    public void should_show_updated_item_when_its_status_is_changed() {
+    public void should_reflect_status_changes_in_repo() {
         TodoRepository.Todo e1, e2;
         Optional<Index.Item> item;
         m.add("extra", "FOO", false);
@@ -116,7 +117,7 @@ public class Specs {
     }
 
     @Test
-    public void should_hide_all_completed_when_the_completed_filter_is_unchecked() {
+    public void should_hide_all_completed_items_when_filtered_out() {
         List<Integer> complete = new ArrayList<>();
         m.add("extra", "FOO", false);
         m.add("extra", "FOO", false);
@@ -142,7 +143,7 @@ public class Specs {
     }
 
     @Test
-    public void should_hide_all_active_when_the_active_filter_is_unchecked() {
+    public void should_hide_all_active_items_when_filtered_out() {
         List<Integer> active = new ArrayList<>();
         m.add("extra", "FOO", true);
         m.add("extra", "FOO", true);
@@ -168,7 +169,7 @@ public class Specs {
     }
 
     @Test
-    public void should_be_able_to_delete_all_completed_items() {
+    public void should_be_able_to_delete_all_completed_items_from_repo() {
         List<Integer> complete = new ArrayList<>();
         m.add("extra", "FOO", false);
         m.add("extra", "FOO", false);
