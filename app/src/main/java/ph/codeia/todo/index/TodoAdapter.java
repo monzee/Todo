@@ -22,6 +22,11 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
 
     public static class State extends Mvp.BaseState<State, Action> {
         private List<Index.Item> items = Collections.emptyList();
+
+        @Override
+        public String toString() {
+            return "size: " + items.size();
+        }
     }
 
     public class RowView extends RecyclerView.ViewHolder {
@@ -38,6 +43,7 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
 
     public TodoAdapter(Controller controller) {
         this.controller = controller;
+        setHasStableIds(true);
     }
 
     @Override
@@ -66,7 +72,6 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
     public Action init() {
         return (state, view) -> {
             this.state = state;
-            setHasStableIds(true);
             view.setAdapter(this);
             return state;
         };

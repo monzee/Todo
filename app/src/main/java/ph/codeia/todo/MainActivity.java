@@ -1,19 +1,23 @@
 package ph.codeia.todo;
 
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 
+import ph.codeia.todo.details.Details;
+import ph.codeia.todo.details.DetailsFragment;
 import ph.codeia.todo.index.Index;
 import ph.codeia.todo.index.IndexFragment;
 import ph.codeia.todo.index.TodoAdapter;
-import ph.codeia.todo.util.FragmentProvider;
-import ph.codeia.todo.util.Pattern;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static class States implements IndexFragment.SaveState {
-        Index.State screen;
-        TodoAdapter.State visible;
+    private static class States implements
+            IndexFragment.SaveState,
+            DetailsFragment.SaveState {
+        Index.State screen = Index.State.ROOT;
+        TodoAdapter.State visible = new TodoAdapter.State();
+        Details.State details = Details.State.ROOT;
 
         @Override
         public void save(Index.State state) {
@@ -24,6 +28,11 @@ public class MainActivity extends AppCompatActivity {
         public void save(TodoAdapter.State state) {
             visible = state;
         }
+
+        @Override
+        public void save(Details.State state) {
+            details = state;
+        }
     }
 
     private States states = new States();
@@ -32,27 +41,28 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.shell);
+        if (savedInstanceState == null) {
+            IndexFragment.of(this).replace(R.id.content).commit();
+        }
+    }
+
+    @Override
+    public void onAttachFragment(Fragment f) {
         States saved = (States) getLastCustomNonConfigurationInstance();
         if (saved != null) {
             states = saved;
         }
-        FragmentProvider<IndexFragment> index = IndexFragment.of(this);
-        index.check(new Pattern.Maybe<IndexFragment>() {
-            @Override
-            public void present(IndexFragment indexFragment) {
-                indexFragment.restore(states.screen, states.visible);
-            }
-
-            @Override
-            public void absent() {
-                index.replace(R.id.content).commit();
-            }
-        });
+        if (f instanceof IndexFragment) {
+            ((IndexFragment) f).restore(states.screen, states.visible);
+        } else if (f instanceof DetailsFragment) {
+            ((DetailsFragment) f).restore(states.details);
+        }
     }
 
     @Override
     public Object onRetainCustomNonConfigurationInstance() {
-        IndexFragment.of(this).get(s -> s.save(states));
+        IndexFragment.of(this).forSome(f -> f.save(states));
+        DetailsFragment.of(this).forSome(f -> f.save(states));
         return states;
     }
 }

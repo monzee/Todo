@@ -1,6 +1,7 @@
 package ph.codeia.todo.util;
 
 import android.annotation.SuppressLint;
+import android.os.Bundle;
 import android.support.annotation.IdRes;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -27,17 +28,20 @@ public abstract class FragmentProvider<F extends Fragment> {
                     if (f != null && cls.isInstance(f)) {
                         return (F) f;
                     }
-                    return (F) F.instantiate(activity, cls.getCanonicalName());
+                    return (F) F.instantiate(
+                            activity,
+                            cls.getCanonicalName(),
+                            bundle.isEmpty() ? null : bundle);
                 }
 
                 @SuppressWarnings("unchecked")
                 @Override
-                public void check(Pattern.Maybe<F> matcher) {
+                public void match(Pattern.Option<F> matcher) {
                     Fragment f = fm.findFragmentByTag(tag);
                     if (f != null && cls.isInstance(f)) {
-                        matcher.present((F) f);
+                        matcher.some((F) f);
                     } else {
-                        matcher.absent();
+                        matcher.none();
                     }
                 }
             };
@@ -46,6 +50,7 @@ public abstract class FragmentProvider<F extends Fragment> {
 
     protected final FragmentManager fm;
     protected final String tag;
+    protected final Bundle bundle = new Bundle();
 
     public FragmentProvider(FragmentManager fm, String tag) {
         this.fm = fm;
@@ -53,10 +58,15 @@ public abstract class FragmentProvider<F extends Fragment> {
     }
 
     public abstract F instance();
-    public abstract void check(Pattern.Maybe<F> matcher);
+    public abstract void match(Pattern.Option<F> matcher);
 
-    public void get(Pattern.Io<F> block) {
-        check(Pattern.whenPresent(block));
+    public void forSome(Pattern.Io<F> block) {
+        match(Pattern.whenPresent(block));
+    }
+
+    public FragmentProvider<F> withArgs(Pattern.Io<Bundle> put) {
+        put.apply(bundle);
+        return this;
     }
 
     @SuppressLint("CommitTransaction")
@@ -76,5 +86,4 @@ public abstract class FragmentProvider<F extends Fragment> {
     public FragmentTransaction add(FragmentTransaction transaction) {
         return transaction.add(instance(), tag);
     }
-
 }

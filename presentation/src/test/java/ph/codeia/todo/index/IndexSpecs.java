@@ -23,7 +23,7 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 @SuppressWarnings("StatementWithEmptyBody")
-public class Specs {
+public class IndexSpecs {
 
     @Rule
     public Timeout noDeadlocks = new Timeout(1000, TimeUnit.MILLISECONDS);

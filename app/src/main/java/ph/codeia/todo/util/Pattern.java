@@ -2,34 +2,34 @@ package ph.codeia.todo.util;
 
 public final class Pattern {
 
-    public interface Maybe<T> {
-        void present(T t);
-        void absent();
+    public interface Option<T> {
+        void some(T t);
+        void none();
     }
 
     public interface Io<T> {
         void apply(T t);
     }
 
-    public static <T> Maybe<T> whenPresent(Io<? super T> consumer) {
-        return new Maybe<T>() {
+    public static <T> Option<T> whenPresent(Io<? super T> consumer) {
+        return new Option<T>() {
             @Override
-            public void present(T t) {
+            public void some(T t) {
                 consumer.apply(t);
             }
 
             @Override
-            public void absent() {}
+            public void none() {}
         };
     }
 
-    public static <T> Maybe<T> whenAbsent(Runnable block) {
-        return new Maybe<T>() {
+    public static <T> Option<T> whenAbsent(Runnable block) {
+        return new Option<T>() {
             @Override
-            public void present(T o) {}
+            public void some(T o) {}
 
             @Override
-            public void absent() {
+            public void none() {
                 block.run();
             }
         };

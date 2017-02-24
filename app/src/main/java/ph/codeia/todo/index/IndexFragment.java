@@ -1,6 +1,7 @@
 package ph.codeia.todo.index;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
@@ -27,14 +28,18 @@ import java.util.concurrent.Executors;
 
 import ph.codeia.todo.Mvp;
 import ph.codeia.todo.R;
+import ph.codeia.todo.Todo;
 import ph.codeia.todo.data.TodoInMemory;
 import ph.codeia.todo.data.TodoRepository;
 import ph.codeia.todo.data.TodoSerialized;
 import ph.codeia.todo.databinding.ScreenIndexBinding;
+import ph.codeia.todo.details.DetailsFragment;
 import ph.codeia.todo.util.AndroidUnit;
 import ph.codeia.todo.util.FragmentProvider;
 
 public class IndexFragment extends Fragment implements Index.View {
+
+    public static final String TAG = IndexFragment.class.getCanonicalName();
 
     public static FragmentProvider<IndexFragment> of(FragmentActivity activity) {
         return new FragmentProvider
@@ -47,9 +52,7 @@ public class IndexFragment extends Fragment implements Index.View {
         void save(TodoAdapter.State state);
     }
 
-    private static final String TAG = IndexFragment.class.getCanonicalName();
     private static final Random RANDOM = new Random();
-    private static final Executor WORKER = Executors.newSingleThreadExecutor();
 
     private final TodoAdapter adapter = new TodoAdapter(new TodoAdapter.Controller() {
         @Override
@@ -63,13 +66,12 @@ public class IndexFragment extends Fragment implements Index.View {
         }
     });
 
+    private final Executor worker = Todo.GLOBALS.io();
     private TodoRepository repo;
     private Index.Presenter presenter;
     private ScreenIndexBinding layout;
-    private AndroidUnit<Index.State, Index.Action, Index.View> screen =
-            new AndroidUnit<>(Index.State.ROOT);
-    private AndroidUnit<TodoAdapter.State, TodoAdapter.Action, RecyclerView> list =
-            new AndroidUnit<>(new TodoAdapter.State());
+    private Mvp.Unit<Index.State, Index.Action, Index.View> screen;
+    private Mvp.Unit<TodoAdapter.State, TodoAdapter.Action, RecyclerView> list;
 
     public void restore(Index.State screenState, TodoAdapter.State listState) {
         screen = new AndroidUnit<>(screenState);
@@ -77,8 +79,10 @@ public class IndexFragment extends Fragment implements Index.View {
     }
 
     public void save(SaveState out) {
-        out.save(screen.state());
-        out.save(list.state());
+        if (isVisible()) {
+            out.save(screen.state());
+            out.save(list.state());
+        }
     }
 
     @Nullable
@@ -87,18 +91,14 @@ public class IndexFragment extends Fragment implements Index.View {
             LayoutInflater inflater,
             @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState) {
-        FragmentActivity activity = getActivity();
-        try {
-            repo = new TodoSerialized(new File(activity.getCacheDir(), "todos"));
-        } catch (IOException | ClassNotFoundException e) {
-            repo = new TodoInMemory();
-        }
+        Context context = getContext();
+        repo = Todo.GLOBALS.todoRepository(context);
         presenter = new IndexActions(repo);
         layout = ScreenIndexBinding.inflate(inflater, container, false);
         layout.doEnterNew.setOnClickListener(_v -> apply(presenter.add()));
-        layout.todoContainer.setLayoutManager(new LinearLayoutManager(activity));
+        layout.todoContainer.setLayoutManager(new LinearLayoutManager(context));
         layout.todoContainer.addItemDecoration(
-                new DividerItemDecoration(activity, DividerItemDecoration.VERTICAL));
+                new DividerItemDecoration(context, DividerItemDecoration.VERTICAL));
         setHasOptionsMenu(true);
         return layout.getRoot();
     }
@@ -136,16 +136,16 @@ public class IndexFragment extends Fragment implements Index.View {
 
     @Override
     public void onPrepareOptionsMenu(Menu menu) {
-        apply((state, _v) -> {
-            if (state.showCompletedItems && state.showActiveItems) {
-                menu.findItem(R.id.both).setChecked(true);
-            } else if (state.showCompletedItems) {
-                menu.findItem(R.id.completed_only).setChecked(true);
-            } else if (state.showActiveItems) {
-                menu.findItem(R.id.active_only).setChecked(true);
-            }
-            return state;
-        });
+        Index.State state = screen.state();
+        if (state.showCompletedItems && state.showActiveItems) {
+            menu.findItem(R.id.both).setChecked(true);
+        } else if (state.showCompletedItems) {
+            setTitle("Completed");
+            menu.findItem(R.id.completed_only).setChecked(true);
+        } else if (state.showActiveItems) {
+            setTitle("Active");
+            menu.findItem(R.id.active_only).setChecked(true);
+        }
     }
 
     @Override
@@ -159,14 +159,17 @@ public class IndexFragment extends Fragment implements Index.View {
                 break;
             case R.id.completed_only:
                 item.setChecked(true);
+                setTitle("Completed");
                 applyNow(presenter.filter(true, false));
                 break;
             case R.id.active_only:
                 item.setChecked(true);
+                setTitle("Active");
                 applyNow(presenter.filter(false, true));
                 break;
             case R.id.both:
                 item.setChecked(true);
+                setTitle("Todo");
                 applyNow(presenter.filter(true, true));
                 break;
             default:
@@ -211,7 +214,11 @@ public class IndexFragment extends Fragment implements Index.View {
 
     @Override
     public void goToDetails(int id) {
-        tell("showing item:%d", id);
+        DetailsFragment.of(getActivity())
+                .withArgs(args -> args.putInt(DetailsFragment.KEY_ID, id))
+                .replace(R.id.content)
+                .addToBackStack(DetailsFragment.TAG)
+                .commit();
     }
 
     @Override
@@ -222,19 +229,23 @@ public class IndexFragment extends Fragment implements Index.View {
     public void log(Mvp.Log level, String message) {
         switch (level) {
             case D:
-                Log.d("mz", message);
+                Log.d("mz:index", message);
                 break;
             case I:
-                Log.i("mz", message);
+                Log.i("mz:index", message);
                 break;
             case E:
-                Log.e("mz", message);
+                Log.e("mz:index", message);
                 break;
         }
     }
 
+    private void setTitle(String title) {
+        getActivity().setTitle(title);
+    }
+
     private void apply(Index.Action action) {
-        screen.apply(action, this, WORKER);
+        screen.apply(action, this, worker);
     }
 
     private void applyNow(Index.Action action) {
