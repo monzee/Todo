@@ -28,10 +28,7 @@ public abstract class FragmentProvider<F extends Fragment> {
                     if (f != null && cls.isInstance(f)) {
                         return (F) f;
                     }
-                    return (F) F.instantiate(
-                            activity,
-                            cls.getCanonicalName(),
-                            bundle.isEmpty() ? null : bundle);
+                    return (F) F.instantiate(activity, cls.getCanonicalName(), bundle);
                 }
 
                 @SuppressWarnings("unchecked")

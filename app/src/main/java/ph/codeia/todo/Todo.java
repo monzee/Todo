@@ -25,7 +25,7 @@ public class Todo extends Application {
         TodoRepository todoRepository(Context context);
     }
 
-    public static Component GLOBALS = new Component() {
+    public static final Component GLOBALS = new Component() {
         Executor io;
         Executor compute;
         TodoRepository repo;

@@ -33,10 +33,10 @@
         <FrameLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
             app:layout_anchor="@id/todo_container_container"
             app:layout_anchorGravity="bottom|end"
-            app:layout_dodgeInsetEdges="bottom"
-            >
+            app:layout_dodgeInsetEdges="bottom">
 
             <android.support.design.widget.FloatingActionButton
                 android:layout_width="wrap_content"

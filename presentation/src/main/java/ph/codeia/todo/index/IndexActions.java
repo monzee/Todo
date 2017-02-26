@@ -27,6 +27,7 @@ public class IndexActions implements Index.Presenter {
                 }
             }
             view.show(visible);
+            view.spin(state.busy);
             return state;
         };
     }
@@ -35,17 +36,15 @@ public class IndexActions implements Index.Presenter {
     public Index.Action load() {
         return (state, view) -> {
             view.spin(true);
-            return state.async(() -> {
+            return state.withBusy(true).async(() -> {
                 List<Index.Item> items = new ArrayList<>();
                 for (TodoRepository.Todo e : repo.all()) {
                     items.add(new Item(e));
                 }
-                return (futureState, futureView) -> {
-                    futureView.spin(false);
-                    return futureState
-                            .withCache(items)
-                            .plus(refresh());
-                };
+                return (futureState, futureView) -> futureState
+                        .withBusy(false)
+                        .withCache(items)
+                        .plus(refresh());
             });
         };
     }
@@ -67,32 +66,35 @@ public class IndexActions implements Index.Presenter {
     }
 
     @Override
-    public Index.Action toggle(int id, boolean value) {
-        return (state, view) -> state.async(() -> {
-            TodoRepository.Todo todo = repo.oneWithId(id);
-            if (todo == null) {
-                Mvp.Log.E.to(view, "no such id: %d", id);
-                return Index.Action.NOOP;
-            } else if (value == todo.completed) {
-                return Index.Action.NOOP;
-            } else {
-                TodoRepository.Todo e = todo.withCompleted(value);
-                repo.put(e);
-                Mvp.Log.D.to(view, "saved #%d: %s", e.id, e.title);
-                return (futureState, futureView) -> {
-                    List<Index.Item> items = futureState.cache;
-                    int i = find(items, id);
-                    if (i != -1) {
-                        items.set(i, new Item(e));
-                    }
-                    return futureState.plus(refresh());
-                };
-            }
-        });
+    public Index.Action setCompleted(int id, boolean value) {
+        return (state, view) -> {
+            view.spin(true);
+            return state.withBusy(true).async(() -> {
+                TodoRepository.Todo todo = repo.oneWithId(id);
+                if (todo == null) {
+                    Mvp.Log.E.to(view, "no such id: %d", id);
+                    return idle();
+                } else if (value == todo.completed) {
+                    return idle();
+                } else {
+                    TodoRepository.Todo e = todo.withCompleted(value);
+                    repo.put(e);
+                    Mvp.Log.D.to(view, "saved #%d: %s", e.id, e.title);
+                    return (futureState, futureView) -> {
+                        List<Index.Item> items = futureState.cache;
+                        int i = find(items, id);
+                        if (i != -1) {
+                            items.set(i, new Item(e));
+                        }
+                        return futureState.withBusy(false).plus(refresh());
+                    };
+                }
+            });
+        };
     }
 
     @Override
-    public Index.Action deleteCompleted() {
+    public Index.Action deleteAllCompleted() {
         return (state, view) -> {
             view.confirmDelete(onConfirm());
             return state;
@@ -108,21 +110,31 @@ public class IndexActions implements Index.Presenter {
     }
 
     private Index.Action onConfirm() {
-        return (state, view) -> state.async(() -> {
-            int count = 0;
-            try (TodoRepository.Transactional r = repo.transact()) {
-                for (Index.Item e : state.cache) if (e.completed()) {
-                    r.delete((int) e.id());
-                    Mvp.Log.D.to(view, "deleted #%d: %s", e.id(), e.title());
-                    count++;
+        return (state, view) -> {
+            view.spin(true);
+            return state.withBusy(true).async(() -> {
+                int count = 0;
+                try (TodoRepository.Transactional r = repo.transact()) {
+                    for (Index.Item e : state.cache) if (e.completed()) {
+                        r.delete((int) e.id());
+                        Mvp.Log.D.to(view, "deleted #%d: %s", e.id(), e.title());
+                        count++;
+                    }
                 }
-            }
-            final int deleted = count;
-            return (futureState, futureView) -> {
-                futureView.tell("Deleted %d items.", deleted);
-                return futureState.plus(load());
-            };
-        });
+                final int deleted = count;
+                return (futureState, futureView) -> {
+                    futureView.tell("Deleted %d items.", deleted);
+                    return futureState.plus(load());
+                };
+            });
+        };
+    }
+
+    private Index.Action idle() {
+        return (state, view) -> {
+            view.spin(false);
+            return state.withBusy(false);
+        };
     }
 
     private static int find(List<Index.Item> xs, int id) {

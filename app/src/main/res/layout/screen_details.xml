@@ -8,7 +8,8 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="horizontal">
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
         <CheckedTextView
             android:layout_width="52dp"
@@ -35,7 +36,7 @@
             android:layout_marginRight="12dp"
             android:layout_marginEnd="12dp"
             android:id="@+id/the_title"
-            android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+            android:textAppearance="?headerText"
             android:text="@{item.title}"
             tools:text="Quick jumps"/>
 
@@ -49,7 +50,7 @@
             android:layout_alignEnd="@+id/the_title"
             android:layout_marginTop="12dp"
             android:id="@+id/the_description"
-            android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
+            android:textAppearance="?bodyText"
             android:text="@{item.description}"
             tools:text="The quick brown fox jumps over the lazy dog. The quick brown\nfox jumps over the lazy dog."/>
     </RelativeLayout>

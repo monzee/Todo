@@ -13,8 +13,8 @@ public interface Index {
         Action load();
         Action details(int id);
         Action add();
-        Action deleteCompleted();
-        Action toggle(int id, boolean complete);
+        Action deleteAllCompleted();
+        Action setCompleted(int id, boolean complete);
         Action filter(boolean showCompleted, boolean showActive);
     }
 

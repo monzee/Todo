@@ -1,8 +1,10 @@
 package ph.codeia.todo.index;
 
+import android.support.v4.view.ViewCompat;
 import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.Collections;
@@ -15,7 +17,7 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
 
     public interface Controller {
         void checked(long id, boolean on);
-        void selected(long id);
+        void selected(View view, long id);
     }
 
     public interface Action extends Mvp.Action<State, Action, RecyclerView> {}
@@ -57,6 +59,8 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
     @Override
     public void onBindViewHolder(RowView holder, int position) {
         holder.layout.setRow(state.items.get(position));
+        ViewCompat.setTransitionName(holder.layout.theTitle, "title:" + position);
+        ViewCompat.setTransitionName(holder.layout.isCompleted, "checked:" + position);
     }
 
     @Override

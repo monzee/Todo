@@ -2,10 +2,9 @@ package ph.codeia.todo.details;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AlertDialog;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -15,6 +14,7 @@ import android.view.ViewGroup;
 
 import java.util.concurrent.Executor;
 
+import ph.codeia.todo.BaseFragment;
 import ph.codeia.todo.Mvp;
 import ph.codeia.todo.R;
 import ph.codeia.todo.Todo;
@@ -22,14 +22,13 @@ import ph.codeia.todo.databinding.ScreenDetailsBinding;
 import ph.codeia.todo.util.AndroidUnit;
 import ph.codeia.todo.util.FragmentProvider;
 
-public class DetailsFragment extends Fragment implements Details.View {
+public class DetailsFragment extends BaseFragment implements Details.View {
 
     public static final String TAG = DetailsFragment.class.getCanonicalName();
     public static final String KEY_ID = "id";
 
     public static FragmentProvider<DetailsFragment> of(FragmentActivity activity) {
-        return new FragmentProvider
-                .Builder<>(DetailsFragment.class, TAG)
+        return new FragmentProvider.Builder<>(DetailsFragment.class, TAG)
                 .build(activity);
     }
 
@@ -47,7 +46,7 @@ public class DetailsFragment extends Fragment implements Details.View {
     }
 
     public void save(SaveState out) {
-        if (isVisible()) {
+        if (details != null) {
             out.save(details.state());
         }
     }
@@ -66,21 +65,11 @@ public class DetailsFragment extends Fragment implements Details.View {
         presenter = new DetailsActions(Todo.GLOBALS.todoRepository(getContext()), id);
         layout = ScreenDetailsBinding.inflate(inflater, container, false);
         layout.isCompleted.setOnClickListener(_v -> apply(presenter.toggleCompleted()));
+        ViewCompat.setTransitionName(layout.theTitle, "title");
+        ViewCompat.setTransitionName(layout.isCompleted, "checked");
         setHasOptionsMenu(true);
+        apply(shouldLoad(savedInstanceState) ? presenter.load() : presenter.refresh());
         return layout.getRoot();
-    }
-
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        if (savedInstanceState == null) {
-            apply(presenter.load());
-        } else {
-            apply((state, view) -> {
-                view.show(state.item);
-                return state;
-            });
-        }
     }
 
     @Override
@@ -131,21 +120,6 @@ public class DetailsFragment extends Fragment implements Details.View {
     @Override
     public void goBack() {
         getFragmentManager().popBackStack();
-    }
-
-    @Override
-    public void log(Mvp.Log level, String message) {
-        switch (level) {
-            case D:
-                Log.d("mz:details", message);
-                break;
-            case I:
-                Log.i("mz:details", message);
-                break;
-            case E:
-                Log.e("mz:details", message);
-                break;
-        }
     }
 
     private void apply(Details.Action action) {

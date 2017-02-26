@@ -6,9 +6,11 @@ public interface Details {
 
     interface Presenter {
         Action load();
+        Action refresh();
         Action toggleCompleted();
         Action delete();
         Action edit();
+        Action back();
     }
 
     interface View extends Mvp.Debug {
@@ -24,12 +26,7 @@ public interface Details {
         boolean completed();
     }
 
-    interface Action extends Mvp.Action<State, Action, View> {
-        Action BACK = (state, view) -> {
-            view.goBack();
-            return state;
-        };
-    }
+    interface Action extends Mvp.Action<State, Action, View> {}
 
     class State extends Mvp.BaseState<State, Action> {
         public static final State ROOT = new State(null);

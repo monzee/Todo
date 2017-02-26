@@ -95,7 +95,7 @@ public class IndexSpecs {
         index.apply(p.load(), v);
         while (index.step(v));
 
-        index.apply(p.toggle(e1.id, !e1.completed), v);
+        index.apply(p.setCompleted(e1.id, !e1.completed), v);
         while (index.step(v));
         item = v.s(i -> i.id() == e1.id).findFirst();
         assertTrue(item.isPresent());
@@ -109,7 +109,7 @@ public class IndexSpecs {
         index.apply(p.load(), v);
         while (index.step(v));
 
-        index.apply(p.toggle(e2.id, !e2.completed), v);
+        index.apply(p.setCompleted(e2.id, !e2.completed), v);
         while (index.step(v));
         item = v.s(i -> i.id() == e2.id).findFirst();
         assertTrue(item.isPresent());
@@ -186,7 +186,7 @@ public class IndexSpecs {
 
         index.apply(p.load(), v);
         while (index.step(v));
-        index.apply(p.deleteCompleted(), v);
+        index.apply(p.deleteAllCompleted(), v);
         v.confirm(index);
         while (index.step(v));
 

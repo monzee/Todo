@@ -13,13 +13,13 @@
         android:orientation="horizontal"
         android:background="?selectableItemBackground"
         android:clickable="true"
-        android:onClick="@{_ -> controller.selected(row.id)}"
+        android:onClick="@{view -> controller.selected(view, row.id)}"
         tools:ignore="RtlSymmetry">
 
         <CheckedTextView
-            android:layout_width="40dp"
+            android:layout_width="52dp"
             android:layout_height="match_parent"
-            android:layout_gravity="center"
+            android:layout_gravity="center_vertical"
             android:id="@+id/is_completed"
             android:checked="@{row.completed}"
             android:button="@null"
@@ -32,16 +32,14 @@
             tools:checked="true" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="12dp"
-            android:paddingLeft="12dp"
-            android:paddingStart="12dp"
-            android:paddingRight="12dp"
-            android:paddingEnd="12dp"
+            android:layout_marginRight="12dp"
+            android:layout_marginEnd="12dp"
             android:id="@+id/the_title"
-            android:textAppearance="?android:textAppearanceMedium"
+            android:textAppearance="?rowText"
             android:text="@{row.title}"
             tools:text="the quick brown fox jumps over the lazy dog."
             />

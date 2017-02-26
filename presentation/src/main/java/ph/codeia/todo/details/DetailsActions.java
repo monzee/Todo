@@ -19,15 +19,21 @@ public class DetailsActions implements Details.Presenter {
             TodoRepository.Todo todo = repo.oneWithId(itemId);
             if (todo == null) {
                 Mvp.Log.E.to(view, "todo not found: #%d", itemId);
-                return Details.Action.BACK;
+                return back();
             } else {
-                return (futureState, futureView) -> {
-                    Item item = new Item(todo);
-                    futureView.show(item);
-                    return futureState.withItem(item);
-                };
+                return (futureState, futureView) -> futureState
+                        .withItem(new Item(todo))
+                        .plus(refresh());
             }
         });
+    }
+
+    @Override
+    public Details.Action refresh() {
+        return (state, view) -> {
+            view.show(state.item);
+            return state;
+        };
     }
 
     @Override
@@ -36,17 +42,15 @@ public class DetailsActions implements Details.Presenter {
             TodoRepository.Todo todo = repo.oneWithId(itemId);
             if (todo == null) {
                 Mvp.Log.E.to(view, "todo not found: #%d", itemId);
-                return Details.Action.BACK;
+                return back();
             } else {
                 TodoRepository.Todo updated = todo
                         .withCompleted(!state.item.completed());
                 repo.put(updated);
                 Mvp.Log.D.to(view, "updated status : #%d -> %s", itemId, updated.completed);
-                return (futureState, futureView) -> {
-                    Item item = new Item(updated);
-                    futureView.show(item);
-                    return futureState.withItem(item);
-                };
+                return (futureState, futureView) -> futureState
+                        .withItem(new Item(updated))
+                        .plus(refresh());
             }
         });
     }
@@ -67,11 +71,19 @@ public class DetailsActions implements Details.Presenter {
         };
     }
 
+    @Override
+    public Details.Action back() {
+        return (state, view) -> {
+            view.goBack();
+            return state;
+        };
+    }
+
     private Details.Action confirmed() {
         return (state, view) -> state.async(() -> {
             repo.delete(itemId);
             Mvp.Log.D.to(view, "deleted #%d", itemId);
-            return Details.Action.BACK;
+            return back();
         });
     }
 }

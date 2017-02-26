@@ -6,8 +6,7 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/content"
-        android:animateLayoutChanges="true" />
+        android:id="@+id/content" />
 
     <android.support.design.widget.NavigationView
         android:layout_width="wrap_content"
@@ -27,8 +26,7 @@
             android:paddingEnd="18dp"
             android:gravity="start|center_vertical"
             android:background="?selectableItemBackground"
-            android:textAppearance="?actionMenuTextAppearance"
-            android:textAllCaps="false"
+            android:textAppearance="?menuText"
             android:clickable="true"
             android:text="About"
             android:id="@+id/go_about" />

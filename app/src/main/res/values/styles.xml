@@ -3,6 +3,10 @@
     <attr name="iconFilter" format="reference" />
     <attr name="iconAdd" format="reference" />
     <attr name="colorIcon" format="color" />
+    <attr name="headerText" format="reference" />
+    <attr name="bodyText" format="reference" />
+    <attr name="rowText" format="reference" />
+    <attr name="menuText" format="reference" />
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -13,6 +17,10 @@
         <item name="colorIcon">#FFFFFFFF</item>
         <item name="iconFilter">@drawable/filter_white</item>
         <item name="iconAdd">@drawable/add_white</item>
+        <item name="headerText">@style/TextAppearance.AppCompat.Headline</item>
+        <item name="bodyText">@style/TextAppearance.AppCompat.Subhead</item>
+        <item name="rowText">@style/TextAppearance.AppCompat.Menu</item>
+        <item name="menuText">@style/TextAppearance.AppCompat.Widget.PopupMenu.Small</item>
     </style>
 
 </resources>

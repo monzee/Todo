@@ -39,6 +39,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        States saved = (States) getLastCustomNonConfigurationInstance();
+        if (saved != null) {
+            states = saved;
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.shell);
         if (savedInstanceState == null) {
@@ -48,10 +52,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onAttachFragment(Fragment f) {
-        States saved = (States) getLastCustomNonConfigurationInstance();
-        if (saved != null) {
-            states = saved;
-        }
         if (f instanceof IndexFragment) {
             ((IndexFragment) f).restore(states.screen, states.visible);
         } else if (f instanceof DetailsFragment) {
