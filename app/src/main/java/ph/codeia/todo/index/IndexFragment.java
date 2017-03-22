@@ -25,11 +25,9 @@ import java.util.concurrent.Executor;
 import ph.codeia.todo.BaseFragment;
 import ph.codeia.todo.Mvp;
 import ph.codeia.todo.R;
-import ph.codeia.todo.Todo;
 import ph.codeia.todo.data.TodoRepository;
 import ph.codeia.todo.databinding.ScreenIndexBinding;
 import ph.codeia.todo.details.DetailsFragment;
-import ph.codeia.todo.util.AndroidUnit;
 import ph.codeia.todo.util.FragmentProvider;
 
 public class IndexFragment extends BaseFragment implements Index.View {
@@ -37,8 +35,7 @@ public class IndexFragment extends BaseFragment implements Index.View {
     public static final String TAG = IndexFragment.class.getCanonicalName();
 
     public static FragmentProvider<IndexFragment> of(FragmentActivity activity) {
-        return new FragmentProvider.Builder<>(IndexFragment.class, TAG)
-                .build(activity);
+        return new FragmentProvider.Builder<>(IndexFragment.class).build(activity);
     }
 
     public interface SaveState {
@@ -60,19 +57,28 @@ public class IndexFragment extends BaseFragment implements Index.View {
         }
     });
 
-    private final Executor worker = Todo.GLOBALS.io();
     private final Random random = new Random();
-    private TodoRepository repo;
-    private Index.Presenter presenter;
     private ScreenIndexBinding layout;
-    private Mvp.Unit<Index.State, Index.Action, Index.View> screen;
-    private Mvp.Unit<TodoAdapter.State, TodoAdapter.Action, RecyclerView> list;
     private View transTitle;
     private View transCheckbox;
 
-    public void restore(Index.State screenState, TodoAdapter.State listState) {
-        screen = new AndroidUnit<>(screenState);
-        list = new AndroidUnit<>(listState);
+    private Executor background;
+    private TodoRepository repo;
+    private Index.Presenter presenter;
+    private Mvp.Unit<Index.State, Index.Action, Index.View> screen;
+    private Mvp.Unit<TodoAdapter.State, TodoAdapter.Action, RecyclerView> list;
+
+    public void restore(
+            Executor background,
+            TodoRepository repo,
+            Index.Presenter presenter,
+            Mvp.Unit<Index.State, Index.Action, Index.View> screen,
+            Mvp.Unit<TodoAdapter.State, TodoAdapter.Action, RecyclerView> list) {
+        this.background = background;
+        this.repo = repo;
+        this.presenter = presenter;
+        this.screen = screen;
+        this.list = list;
     }
 
     public void save(SaveState out) {
@@ -89,8 +95,6 @@ public class IndexFragment extends BaseFragment implements Index.View {
             @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState) {
         Context context = getContext();
-        repo = Todo.GLOBALS.todoRepository(context);
-        presenter = new IndexActions(repo);
         layout = ScreenIndexBinding.inflate(inflater, container, false);
         layout.doEnterNew.setOnClickListener(_v -> apply(presenter.add()));
         layout.todoContainer.setLayoutManager(new LinearLayoutManager(context));
@@ -106,8 +110,7 @@ public class IndexFragment extends BaseFragment implements Index.View {
     public void onResume() {
         super.onResume();
         list.start(layout.todoContainer);
-        screen.start(this);
-        apply(Index.Action.FLUSH);
+        screen.start(Index.Action.NOOP, this, background);
     }
 
     @Override
@@ -174,21 +177,13 @@ public class IndexFragment extends BaseFragment implements Index.View {
 
     @Override
     public void show(List<Index.Item> newItems) {
-        if (newItems.isEmpty()) {
-            layout.emptyMessage.setVisibility(View.VISIBLE);
-        } else {
-            layout.emptyMessage.setVisibility(View.GONE);
-        }
+        layout.emptyMessage.setVisibility(newItems.isEmpty() ? View.VISIBLE : View.GONE);
         applyList(adapter.setItems(newItems));
     }
 
     @Override
     public void spin(boolean busy) {
-        if (busy) {
-            layout.spinner.setVisibility(View.VISIBLE);
-        } else {
-            layout.spinner.setVisibility(View.GONE);
-        }
+        layout.spinner.setVisibility(busy ? View.VISIBLE : View.GONE);
     }
 
     @Override
@@ -204,12 +199,12 @@ public class IndexFragment extends BaseFragment implements Index.View {
     public void goToDetails(int id) {
         forceLoadOnReenter();
         DetailsFragment.of(getActivity())
-                .withArgs(args -> args.putInt(DetailsFragment.KEY_ID, id))
+                .withArgs(args -> args.putInt(DetailsFragment.ARG_ID, id))
                 .replace(R.id.content)
                 .addSharedElement(transTitle, "title")
                 .addSharedElement(transCheckbox, "checked")
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_CLOSE)
-                .addToBackStack(DetailsFragment.TAG)
+                .addToBackStack(TAG)
                 .commit();
     }
 
@@ -222,7 +217,7 @@ public class IndexFragment extends BaseFragment implements Index.View {
     }
 
     private void apply(Index.Action action) {
-        screen.apply(action, this, worker);
+        screen.apply(action, this, background);
     }
 
     private void applyNow(Index.Action action) {
@@ -235,6 +230,10 @@ public class IndexFragment extends BaseFragment implements Index.View {
 
     @SuppressLint("NewApi")  // retrolambda can convert the try-let
     private Index.Action populate() {
+        // shadow the fields to make the lambda not dependent on the fragment (== leak)
+        TodoRepository repo = this.repo;
+        Index.Presenter presenter = this.presenter;
+        Random random = this.random;
         return (state, view) -> {
             view.spin(true);
             return state.withBusy(true).async(() -> {

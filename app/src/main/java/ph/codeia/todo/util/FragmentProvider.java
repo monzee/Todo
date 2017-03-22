@@ -12,11 +12,16 @@ public abstract class FragmentProvider<F extends Fragment> {
 
     public static class Builder<F extends Fragment> {
         private final Class<F> cls;
-        private final String tag;
+        private String tag;
 
-        public Builder(Class<F> cls, String tag) {
+        public Builder(Class<F> cls) {
             this.cls = cls;
+            tag = cls.getCanonicalName();
+        }
+
+        public FragmentProvider.Builder<F> withTag(String tag) {
             this.tag = tag;
+            return this;
         }
 
         public FragmentProvider<F> build(FragmentActivity activity) {
@@ -58,7 +63,7 @@ public abstract class FragmentProvider<F extends Fragment> {
     public abstract void match(Pattern.Option<F> matcher);
 
     public void forSome(Pattern.Io<F> block) {
-        match(Pattern.whenPresent(block));
+        match(Pattern.forSome(block));
     }
 
     public FragmentProvider<F> withArgs(Pattern.Io<Bundle> put) {

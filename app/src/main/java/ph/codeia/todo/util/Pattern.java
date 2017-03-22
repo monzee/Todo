@@ -11,7 +11,7 @@ public final class Pattern {
         void apply(T t);
     }
 
-    public static <T> Option<T> whenPresent(Io<? super T> consumer) {
+    public static <T> Option<T> forSome(Io<? super T> consumer) {
         return new Option<T>() {
             @Override
             public void some(T t) {
@@ -23,7 +23,7 @@ public final class Pattern {
         };
     }
 
-    public static <T> Option<T> whenAbsent(Runnable block) {
+    public static <T> Option<T> forNone(Runnable block) {
         return new Option<T>() {
             @Override
             public void some(T o) {}

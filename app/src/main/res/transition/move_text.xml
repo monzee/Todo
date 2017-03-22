@@ -1,0 +1,6 @@
+<transitionSet>
+    <changeBounds />
+    <changeTransform />
+    <changeClipBounds />
+    <transition class="ph.codeia.todo.util.TextTransition" />
+</transitionSet>

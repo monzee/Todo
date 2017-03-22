@@ -1,0 +1,8 @@
+<transitionSet xmlns:android="http://schemas.android.com/apk/res/android"
+    android:transitionOrdering="together"
+    android:interpolator="@android:interpolator/anticipate_overshoot">
+    <changeBounds />
+    <changeTransform />
+    <changeClipBounds />
+    <transition class="ph.codeia.todo.util.TextTransition" />
+</transitionSet>

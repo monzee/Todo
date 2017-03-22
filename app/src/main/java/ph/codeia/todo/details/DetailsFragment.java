@@ -24,20 +24,18 @@ import ph.codeia.todo.util.FragmentProvider;
 
 public class DetailsFragment extends BaseFragment implements Details.View {
 
-    public static final String TAG = DetailsFragment.class.getCanonicalName();
-    public static final String KEY_ID = "id";
+    public static final String ARG_ID = "id";
 
     public static FragmentProvider<DetailsFragment> of(FragmentActivity activity) {
-        return new FragmentProvider.Builder<>(DetailsFragment.class, TAG)
-                .build(activity);
+        return new FragmentProvider.Builder<>(DetailsFragment.class).build(activity);
     }
 
     public interface SaveState {
         void save(Details.State state);
     }
 
-    private final Executor worker = Todo.GLOBALS.io();
-    private DetailsActions presenter;
+    private final Executor background = Todo.GLOBALS.io();
+    private Details.Presenter presenter;
     private ScreenDetailsBinding layout;
     private Mvp.Unit<Details.State, Details.Action, Details.View> details;
 
@@ -57,7 +55,7 @@ public class DetailsFragment extends BaseFragment implements Details.View {
             LayoutInflater inflater,
             @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState) {
-        int id = getArguments().getInt(KEY_ID, -1);
+        int id = getArguments().getInt(ARG_ID, -1);
         if (id == -1) {
             goBack();
             return null;
@@ -123,6 +121,6 @@ public class DetailsFragment extends BaseFragment implements Details.View {
     }
 
     private void apply(Details.Action action) {
-        details.apply(action, this, worker);
+        details.apply(action, this, background);
     }
 }

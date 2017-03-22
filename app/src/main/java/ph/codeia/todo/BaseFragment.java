@@ -17,7 +17,7 @@ public class BaseFragment extends Fragment {
         super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             TransitionInflater inflater = TransitionInflater.from(getContext());
-            Transition transition = inflater.inflateTransition(android.R.transition.move);
+            Transition transition = inflater.inflateTransition(R.transition.move_text);
             setSharedElementEnterTransition(transition);
             setSharedElementReturnTransition(transition);
             setReenterTransition(inflater.inflateTransition(android.R.transition.fade));

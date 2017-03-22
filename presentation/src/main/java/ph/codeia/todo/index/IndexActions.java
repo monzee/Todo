@@ -130,7 +130,7 @@ public class IndexActions implements Index.Presenter {
         };
     }
 
-    private Index.Action idle() {
+    private static Index.Action idle() {
         return (state, view) -> {
             view.spin(false);
             return state.withBusy(false);

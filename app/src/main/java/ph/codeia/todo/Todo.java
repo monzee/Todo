@@ -8,14 +8,12 @@ import com.squareup.leakcanary.LeakCanary;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import ph.codeia.todo.data.TodoInMemory;
 import ph.codeia.todo.data.TodoRepository;
 import ph.codeia.todo.data.TodoSerialized;
-import ph.codeia.todo.util.Pattern;
 
 public class Todo extends Application {
 
@@ -33,7 +31,7 @@ public class Todo extends Application {
         @Override
         public Executor io() {
             if (io == null) {
-                io = Executors.newSingleThreadExecutor();
+                io = Executors.newCachedThreadPool();
             }
             return io;
         }

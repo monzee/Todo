@@ -2,11 +2,13 @@ package ph.codeia.todo;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 
 import ph.codeia.todo.details.Details;
 import ph.codeia.todo.details.DetailsFragment;
 import ph.codeia.todo.index.Index;
+import ph.codeia.todo.index.IndexComponent;
 import ph.codeia.todo.index.IndexFragment;
 import ph.codeia.todo.index.TodoAdapter;
 
@@ -15,13 +17,13 @@ public class MainActivity extends AppCompatActivity {
     private static class States implements
             IndexFragment.SaveState,
             DetailsFragment.SaveState {
-        Index.State screen = Index.State.ROOT;
+        Index.State index = Index.State.ROOT;
         TodoAdapter.State visible = new TodoAdapter.State();
         Details.State details = Details.State.ROOT;
 
         @Override
         public void save(Index.State state) {
-            screen = state;
+            index = state;
         }
 
         @Override
@@ -46,14 +48,23 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.shell);
         if (savedInstanceState == null) {
-            IndexFragment.of(this).replace(R.id.content).commit();
+            IndexFragment.of(this)
+                    .replace(R.id.content)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                    .commit();
         }
     }
 
     @Override
     public void onAttachFragment(Fragment f) {
         if (f instanceof IndexFragment) {
-            ((IndexFragment) f).restore(states.screen, states.visible);
+            IndexComponent scope = new IndexComponent.Production(Todo.GLOBALS, getBaseContext());
+            ((IndexFragment) f).restore(
+                    scope.screenWorker(),
+                    scope.repository(),
+                    scope.presenter(),
+                    scope.screen(states.index),
+                    scope.visible(states.visible));
         } else if (f instanceof DetailsFragment) {
             ((DetailsFragment) f).restore(states.details);
         }

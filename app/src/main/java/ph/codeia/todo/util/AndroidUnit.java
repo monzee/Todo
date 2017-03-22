@@ -3,6 +3,7 @@ package ph.codeia.todo.util;
 import android.os.Handler;
 import android.os.Looper;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.Executor;
 
 import ph.codeia.todo.Mvp;
@@ -31,24 +32,24 @@ extends Mvp.Unit<S, A, V> {
     }
 
     @Override
-    public void apply(A action, V view, Executor worker) {
-        main(() -> super.apply(action, view, worker));
+    public void apply(A action, WeakReference<V> viewRef, Executor worker) {
+        main(() -> super.apply(action, viewRef, worker));
     }
 
     @Override
     public void handle(Throwable e, V view) {
-        if (errorHandler != null) {
+        if (errorHandler != null && view != null) {
             errorHandler.handle(e, view);
+        } else if (!isStopped) {
+            main(() -> {
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                } else {
+                    throw new RuntimeException(e);
+                }
+            });
         } else {
-            if (!isStopped) {
-                main(() -> {
-                    if (e instanceof RuntimeException) {
-                        throw (RuntimeException) e;
-                    } else {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
+            e.printStackTrace();
         }
     }
 

@@ -41,11 +41,10 @@ public interface Index {
 
     interface Action extends Mvp.Action<State, Action, View> {
         Action NOOP = (state, _view) -> state;
-        Action FLUSH = (state, _view) -> state.plus(NOOP);
     }
 
     class State extends Mvp.BaseState<State, Action> {
-        public static final State ROOT = new State(true, true, false,Collections.emptyList());
+        public static final State ROOT = new State(true, true, false, Collections.emptyList());
         public final boolean showCompletedItems;
         public final boolean showActiveItems;
         public final boolean busy;
