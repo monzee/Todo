@@ -7,8 +7,6 @@ import ph.codeia.todo.Stepper;
 import ph.codeia.todo.data.TodoInMemory;
 import ph.codeia.todo.data.TodoRepository;
 
-import static org.junit.Assert.*;
-
 public class DetailsSpecs {
     Stepper<Details.State, Details.Action, Details.View> details;
     TodoRepository m;
@@ -31,7 +29,7 @@ public class DetailsSpecs {
 
         void confirm(Stepper<Details.State, Details.Action, Details.View> unit) {
             if (delete != null) {
-                unit.apply(delete, this);
+                unit.apply(this, delete);
                 delete = null;
             }
         }
@@ -65,6 +63,11 @@ public class DetailsSpecs {
             } else {
                 System.out.println(message);
             }
+        }
+
+        @Override
+        public void log(Mvp.Log level, Throwable error) {
+            error.printStackTrace();
         }
     }
 }

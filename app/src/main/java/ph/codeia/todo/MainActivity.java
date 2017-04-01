@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
     public void onAttachFragment(Fragment f) {
         if (f instanceof IndexFragment) {
             IndexComponent scope = new IndexComponent.Production(Todo.GLOBALS, getBaseContext());
-            ((IndexFragment) f).restore(
+            ((IndexFragment) f).inject(
                     scope.screenWorker(),
                     scope.repository(),
                     scope.presenter(),

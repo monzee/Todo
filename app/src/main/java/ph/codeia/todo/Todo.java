@@ -30,29 +30,35 @@ public class Todo extends Application {
 
         @Override
         public Executor io() {
-            if (io == null) {
-                io = Executors.newCachedThreadPool();
+            synchronized (this) {
+                if (io == null) {
+                    io = Executors.newCachedThreadPool();
+                }
             }
             return io;
         }
 
         @Override
         public Executor compute() {
-            if (compute == null) {
-                compute = Executors.newSingleThreadExecutor();
+            synchronized (this) {
+                if (compute == null) {
+                    compute = Executors.newSingleThreadExecutor();
+                }
             }
             return compute;
         }
 
         @Override
         public TodoRepository todoRepository(Context context) {
-            if (repo == null) {
-                try {
-                    repo = new TodoSerialized(new File(context.getCacheDir(), "todos"));
-                } catch (ClassNotFoundException | IOException e) {
-                    Toast.makeText(context, "couldn't read/create cache file", Toast.LENGTH_SHORT)
-                            .show();
-                    repo = new TodoInMemory();
+            synchronized (this) {
+                if (repo == null) {
+                    try {
+                        repo = new TodoSerialized(new File(context.getCacheDir(), "todos"));
+                    } catch (ClassNotFoundException | IOException e) {
+                        Toast.makeText(context, "couldn't read/create cache file", Toast.LENGTH_SHORT)
+                                .show();
+                        repo = new TodoInMemory();
+                    }
                 }
             }
             return repo;

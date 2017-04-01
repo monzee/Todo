@@ -10,15 +10,15 @@ public class Stepper<
         S extends Mvp.State<S, A>,
         A extends Mvp.Action<S, A, V>,
         V extends Mvp.Debug>
-        extends Mvp.Unit<S, A, V> {
+extends Mvp.Unit<S, A, V> {
 
     public Stepper(S state) {
         super(state);
     }
 
     @Override
-    public void apply(A action, V view, Executor worker) {
-        apply(action, view);
+    public void apply(Executor worker, V view, A action) {
+        apply(view, action);
     }
 
     @Override
@@ -26,7 +26,7 @@ public class Stepper<
         Mvp.Log.E.to(view, error.getMessage());
     }
 
-    public void apply(A action, V view) {
+    public void apply(V view, A action) {
         state = action.fold(state, view);
     }
 
@@ -41,11 +41,16 @@ public class Stepper<
             if (future instanceof RunnableFuture) {
                 ((RunnableFuture) future).run();
             }
-            apply(future.get(), view);
+            apply(view, future.get());
             return true;
         } catch (InterruptedException | ExecutionException e) {
             handle(e, view);
             return false;
         }
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    public void drain(V view) {
+        while (step(view));
     }
 }

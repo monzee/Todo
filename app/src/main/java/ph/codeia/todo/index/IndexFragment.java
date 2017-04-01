@@ -68,7 +68,7 @@ public class IndexFragment extends BaseFragment implements Index.View {
     private Mvp.Unit<Index.State, Index.Action, Index.View> screen;
     private Mvp.Unit<TodoAdapter.State, TodoAdapter.Action, RecyclerView> list;
 
-    public void restore(
+    public void inject(
             Executor background,
             TodoRepository repo,
             Index.Presenter presenter,
@@ -110,7 +110,7 @@ public class IndexFragment extends BaseFragment implements Index.View {
     public void onResume() {
         super.onResume();
         list.start(layout.todoContainer);
-        screen.start(Index.Action.NOOP, this, background);
+        screen.start(background, this, Index.Action.NOOP);
     }
 
     @Override
@@ -217,15 +217,15 @@ public class IndexFragment extends BaseFragment implements Index.View {
     }
 
     private void apply(Index.Action action) {
-        screen.apply(action, this, background);
+        screen.apply(background, this, action);
     }
 
     private void applyNow(Index.Action action) {
-        screen.apply(action, this, Runnable::run);
+        screen.apply(Runnable::run, this, action);
     }
 
     private void applyList(TodoAdapter.Action action) {
-        list.apply(action, layout.todoContainer, Runnable::run);
+        list.apply(Runnable::run, layout.todoContainer, action);
     }
 
     @SuppressLint("NewApi")  // retrolambda can convert the try-let
@@ -243,10 +243,7 @@ public class IndexFragment extends BaseFragment implements Index.View {
                     t.add("learn latin", "Lorem ipsum dolor sit amet", random.nextBoolean());
                     t.add("something good", "foo bar baz bat quux", random.nextBoolean());
                 }
-                return (futureState, futureView) -> {
-                    futureView.spin(false);
-                    return futureState.plus(presenter.load());
-                };
+                return presenter.load();
             });
         };
     }

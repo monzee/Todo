@@ -10,7 +10,8 @@ import android.util.Log;
 
 public class BaseFragment extends Fragment {
 
-    protected static final String STALE = "is-stale";
+    protected static final String UP_TO_DATE = "is-not-stale";
+    protected static final String ABNORMAL_EXIT = "murdered-by-the-phone";
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -21,6 +22,15 @@ public class BaseFragment extends Fragment {
             setSharedElementEnterTransition(transition);
             setSharedElementReturnTransition(transition);
             setReenterTransition(inflater.inflateTransition(android.R.transition.fade));
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Bundle args = getArguments();
+        if (args != null) {
+            args.remove(ABNORMAL_EXIT);
         }
     }
 
@@ -39,6 +49,21 @@ public class BaseFragment extends Fragment {
         }
     }
 
+    public void log(Mvp.Log level, Throwable error) {
+        String suffix = getClass().getSimpleName();
+        switch (level) {
+            case D:
+                Log.d("mz:" + suffix, "Caught:", error);
+                break;
+            case I:
+                Log.i("mz:" + suffix, "Caught:", error);
+                break;
+            case E:
+                Log.e("mz:" + suffix, "Caught:", error);
+                break;
+        }
+    }
+
     protected boolean shouldLoad() {
         return shouldLoad(null);
     }
@@ -48,17 +73,17 @@ public class BaseFragment extends Fragment {
         if (args == null) {
             return savedInstanceState == null;
         }
-        if (!args.getBoolean(STALE, true)) {
-            return false;
-        }
-        args.putBoolean(STALE, false);
-        return true;
+        boolean isStale = !args.getBoolean(UP_TO_DATE, false) ||
+                args.containsKey(ABNORMAL_EXIT);
+        args.putBoolean(UP_TO_DATE, true);
+        args.putBoolean(ABNORMAL_EXIT, true);
+        return isStale;
     }
 
     protected void forceLoadOnReenter() {
         Bundle args = getArguments();
         if (args != null) {
-            args.putBoolean(STALE, true);
+            args.putBoolean(UP_TO_DATE, false);
         }
     }
 }

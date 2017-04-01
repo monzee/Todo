@@ -22,18 +22,18 @@ extends Mvp.Unit<S, A, V> {
     }
 
     public AndroidUnit(S state, Mvp.ErrorHandler<V> errorHandler) {
-        this(new Handler(Looper.getMainLooper()), state, errorHandler);
+        this(state, errorHandler, new Handler(Looper.getMainLooper()));
     }
 
-    public AndroidUnit(Handler handler, S state, Mvp.ErrorHandler<V> errorHandler) {
+    public AndroidUnit(S state, Mvp.ErrorHandler<V> errorHandler, Handler handler) {
         super(state);
         this.handler = handler;
         this.errorHandler = errorHandler;
     }
 
     @Override
-    public void apply(A action, WeakReference<V> viewRef, Executor worker) {
-        main(() -> super.apply(action, viewRef, worker));
+    protected void apply(Executor worker, WeakReference<V> viewRef, A action) {
+        main(() -> super.apply(worker, viewRef, action));
     }
 
     @Override

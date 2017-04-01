@@ -66,7 +66,7 @@ public class DetailsFragment extends BaseFragment implements Details.View {
         ViewCompat.setTransitionName(layout.theTitle, "title");
         ViewCompat.setTransitionName(layout.isCompleted, "checked");
         setHasOptionsMenu(true);
-        apply(shouldLoad(savedInstanceState) ? presenter.load() : presenter.refresh());
+        apply(shouldLoad() ? presenter.load() : presenter.refresh());
         return layout.getRoot();
     }
 
@@ -121,6 +121,6 @@ public class DetailsFragment extends BaseFragment implements Details.View {
     }
 
     private void apply(Details.Action action) {
-        details.apply(action, this, background);
+        details.apply(background, this, action);
     }
 }

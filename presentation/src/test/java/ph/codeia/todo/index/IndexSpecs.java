@@ -22,7 +22,6 @@ import ph.codeia.todo.data.TodoRepository;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
-@SuppressWarnings("StatementWithEmptyBody")
 public class IndexSpecs {
 
     @Rule
@@ -44,14 +43,14 @@ public class IndexSpecs {
     @Test
     public void should_show_spinner_before_fetching() {
         assertFalse(v.isSpinning);
-        index.apply(p.load(), v);
+        index.apply(v, p.load());
         assertTrue(v.isSpinning);
     }
 
     @Test
     public void should_hide_spinner_after_fetching() {
-        index.apply(p.load(), v);
-        while (index.step(v));
+        index.apply(v, p.load());
+        index.drain(v);
         assertFalse(v.isSpinning);
     }
 
@@ -62,7 +61,7 @@ public class IndexSpecs {
         m.add("baz", "BAZ", false);
 
         assertThat(index.state().cache, not(hasItem(anything())));
-        index.apply(p.load(), v);
+        index.apply(v, p.load());
         assertTrue(index.step(v));
         assertEquals(3, index.state().cache.size());
     }
@@ -73,7 +72,7 @@ public class IndexSpecs {
         m.add("bar", "BAR", true);
         m.add("baz", "BAZ", false);
 
-        index.apply(p.load(), v);
+        index.apply(v, p.load());
         index.step(v);
 
         assertEquals(0, v.count());
@@ -92,11 +91,11 @@ public class IndexSpecs {
         e1 = m.add("bar", "BAR", true);
         m.add("extra", "FOO", false);
         m.add("extra", "FOO", false);
-        index.apply(p.load(), v);
-        while (index.step(v));
+        index.apply(v, p.load());
+        index.drain(v);
 
-        index.apply(p.setCompleted(e1.id, !e1.completed), v);
-        while (index.step(v));
+        index.apply(v, p.setCompleted(e1.id, !e1.completed));
+        index.drain(v);
         item = v.s(i -> i.id() == e1.id).findFirst();
         assertTrue(item.isPresent());
         assertNotEquals(e1.completed, item.get().completed());
@@ -106,11 +105,11 @@ public class IndexSpecs {
         e2 = m.add("baz", "BAZ", false);
         m.add("extra", "FOO", false);
         m.add("extra", "FOO", false);
-        index.apply(p.load(), v);
-        while (index.step(v));
+        index.apply(v, p.load());
+        index.drain(v);
 
-        index.apply(p.setCompleted(e2.id, !e2.completed), v);
-        while (index.step(v));
+        index.apply(v, p.setCompleted(e2.id, !e2.completed));
+        index.drain(v);
         item = v.s(i -> i.id() == e2.id).findFirst();
         assertTrue(item.isPresent());
         assertNotEquals(e2.completed, item.get().completed());
@@ -132,14 +131,14 @@ public class IndexSpecs {
         m.add("extra", "FOO", false);
         m.add("extra", "FOO", false);
 
-        index.apply(p.load(), v);
-        while (index.step(v));
+        index.apply(v, p.load());
+        index.drain(v);
         assertEquals(12, v.count());
 
-        index.apply(p.filter(false, true), v);
-        while (index.step(v));
+        index.apply(v, p.filter(false, true));
+        index.drain(v);
         assertEquals(9, v.count());
-        complete.stream().forEach(id -> assertThat(visibleIds(), not(hasItem(id))));
+        complete.forEach(id -> assertThat(visibleIds(), not(hasItem(id))));
     }
 
     @Test
@@ -158,14 +157,14 @@ public class IndexSpecs {
         m.add("extra", "FOO", true);
         m.add("extra", "FOO", true);
 
-        index.apply(p.load(), v);
-        while (index.step(v));
+        index.apply(v, p.load());
+        index.drain(v);
         assertEquals(12, v.count());
 
-        index.apply(p.filter(true, false), v);
-        while (index.step(v));
+        index.apply(v, p.filter(true, false));
+        index.drain(v);
         assertEquals(9, v.count());
-        active.stream().forEach(id -> assertThat(visibleIds(), not(hasItem(id))));
+        active.forEach(id -> assertThat(visibleIds(), not(hasItem(id))));
     }
 
     @Test
@@ -184,15 +183,15 @@ public class IndexSpecs {
         m.add("extra", "FOO", false);
         m.add("extra", "FOO", false);
 
-        index.apply(p.load(), v);
-        while (index.step(v));
-        index.apply(p.deleteAllCompleted(), v);
+        index.apply(v, p.load());
+        index.drain(v);
+        index.apply(v, p.deleteAllCompleted());
         v.confirm(index);
-        while (index.step(v));
+        index.drain(v);
 
         List<Integer> allIds = m.all().stream().map(e -> e.id).collect(Collectors.toList());
         assertEquals(9, allIds.size());
-        complete.stream().forEach(id -> assertThat(allIds, not(hasItem(id))));
+        complete.forEach(id -> assertThat(allIds, not(hasItem(id))));
     }
 
     List<Integer> visibleIds() {
@@ -221,7 +220,7 @@ public class IndexSpecs {
 
         void confirm(Mvp.Unit<Index.State, Index.Action, Index.View> unit) {
             if (confirm != null) {
-                unit.apply(confirm, this, Runnable::run);
+                unit.apply(Runnable::run, this, confirm);
                 confirm = null;
             }
         }
@@ -233,6 +232,11 @@ public class IndexSpecs {
             } else {
                 System.out.println(message);
             }
+        }
+
+        @Override
+        public void log(Mvp.Log level, Throwable error) {
+            error.printStackTrace();
         }
 
         @Override
