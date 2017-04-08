@@ -23,7 +23,7 @@ extends Mvp.Unit<S, A, V> {
 
     @Override
     public void handle(Throwable error, V view) {
-        Mvp.Log.E.to(view, error.getMessage());
+        view.log(Mvp.Log.E, error);
     }
 
     public void apply(V view, A action) {

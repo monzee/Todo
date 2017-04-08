@@ -17,7 +17,7 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
 
     public interface Controller {
         void checked(long id, boolean on);
-        void selected(View view, long id);
+        void selected(View row, long id);
     }
 
     public interface Action extends Mvp.Action<State, Action, RecyclerView> {}
@@ -31,7 +31,7 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
         }
     }
 
-    public class RowView extends RecyclerView.ViewHolder {
+    public static class RowView extends RecyclerView.ViewHolder {
         final ItemIndexBinding layout;
 
         public RowView(ItemIndexBinding layout) {
@@ -40,11 +40,12 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
         }
     }
 
+    private final State state;
     private final Controller controller;
-    private State state;
 
-    public TodoAdapter(Controller controller) {
+    public TodoAdapter(State state, Controller controller) {
         this.controller = controller;
+        this.state = state != null ? state : new State();
         setHasStableIds(true);
     }
 
@@ -74,8 +75,7 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
     }
 
     public Action init() {
-        return (state, view) -> {
-            this.state = state;
+        return (_s, view) -> {
             view.setAdapter(this);
             return state;
         };
@@ -108,6 +108,10 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.RowView> {
             }, false);
             return (futureState, futureView) -> {
                 futureState.items = newItems;
+                // technically leaking the old view here, but this happens so
+                // quickly that i think it's fine. i'm not even sure why this is
+                // an async action in the first place. the else branch almost
+                // never happens unless there's thousands of items in the list.
                 if (view == futureView) {
                     diff.dispatchUpdatesTo(this);
                 } else {

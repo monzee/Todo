@@ -19,27 +19,27 @@ import java.util.concurrent.RunnableFuture;
  * <ul>
  * <li> an {@link Action} is a procedure that can be initiated by a user or the
  * system that transforms a State object into another State.
- * <li> a View is an type bound to the action that projects current State into
- * some user-facing device, most commonly a screen.
+ * <li> a View is a type bound to the action that projects the current State
+ * into some user-facing device, most commonly a screen.
  * <li> a {@link State} is a snapshot of the application at some point during
  * its lifetime. It holds a queue of future actions waiting to be run and tracks
  * the number of concurrently running actions.
  * <li> a {@link Unit} binds the three together. It holds a state object,
- * accepts an action and runs it to derive a new state, replaces its state with
+ * accepts an action, runs it to derive a new state, replaces its state with
  * the result and waits for the next action.
  * </ul>
- * A presenter represents a set of valid Actions that may be taken at any
- * point in the application. It is not defined here because the unit only cares
- * about the action, not the object from where it came.
+ * A presenter is the sum of valid Actions that may be taken at any point in the
+ * application. It is not defined here because the unit only cares about
+ * actions, not the object from where they come.
  * <p>
  * The signature of {@link Action} is what makes the presenter a presenter: it
  * takes some View object in addition to the old state. Actions are not pure
- * functions; the view acts as a channel for side effects while the action
- * computes a new state. Because of this design,
+ * functions; the view acts as a channel for side effects while the new state
+ * is being computed in the action. Because of this design,
  * <ul>
- * <li> the presenter receives a reference to the view albeit in an indirect
- * way. This turns out to be an advantage because the presenter object wouldn't
- * have to have {@code #bind(View)} and {@code #unbind()} pairs, thus reducing
+ * <li> the presenter receives a reference to the view and directly manipulates
+ * it. This obviates the View field in the presenter class, making the methods
+ * {@code #bind(View)} and {@code #unbind()} unnecessary and reducing the
  * opportunities to leak stale contexts.
  * <li> all display logic lives in the presenter and not in a self-contained
  * view that knows how to render itself from the state like in a ReactJS-
@@ -207,7 +207,7 @@ public interface Mvp {
          * Starts the unit.
          * <p>
          * Computes a new state before accepting new actions. If the unit might
-         * have folded an async state before restarting (i.e. in an action that
+         * have folded an async action before restarting (i.e. an action that
          * calls/returns {@link State#async(Future)}), you should start the unit
          * using {@link #start(Executor, V, A)} instead.
          *
@@ -232,14 +232,14 @@ public interface Mvp {
          * Waits in the background until all pending tasks from the previous
          * incarnation are done and the new actions are enqueued in the state.
          *
-         * @param worker NEVER PASS AN IMMEDIATE EXECUTOR (i.e. {@code
-         *               Runnable::run}). You will most likely deadlock the main
-         *               thread.
+         * @param worker Be careful when passing an immediate executor (i.e.
+         *               {@code
+         *               Runnable::run}). You might deadlock the main thread.
          * @param view View to be used by the actions and the error handler.
          * @param after The action to perform when the backlog is cleared. A
          *              no-op is fine, i.e. {@code (state, view) -> state}.
          *              Unfortunately, that cannot be instantiated here because
-         *              of the recursive type parameters so you have to pass one
+         *              of the recursive type parameters so it has to be passed.
          */
         public void start(Executor worker, V view, A after) {
             start(view);
@@ -257,7 +257,7 @@ public interface Mvp {
         /**
          * Stops the unit.
          * <p>
-         * Any actions passed to {@link #apply(Executor, V, A)} while stopped
+         * Any action passed to {@link #apply(Executor, V, A)} while stopped
          * will be enqueued onto the state's future queue as a completed future.
          * They will be folded when the unit is restarted.
          */
@@ -268,8 +268,14 @@ public interface Mvp {
         /**
          * Computes a new state by folding an action into the current state.
          *
-         * @param worker Provides a thread to execute async calls in
-         * @param view A channel for side effects to be used by the actions.
+         * The view is wrapped in a {@link WeakReference} before the action is
+         * executed so that long-running actions won't prevent it from being
+         * GC'ed. The unit will probably have been stopped when the view is
+         * GC'ed so there's no danger of NPE in the action (unless you forget
+         * to call {@link #stop()}).
+         *
+         * @param worker Provides a thread to execute async calls in.
+         * @param view A channel for side effects to be used by the action.
          * @param action The action to fold.
          */
         public void apply(Executor worker, V view, A action) {

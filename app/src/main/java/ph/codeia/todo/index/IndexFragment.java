@@ -43,24 +43,11 @@ public class IndexFragment extends BaseFragment implements Index.View {
         void save(TodoAdapter.State state);
     }
 
-    private final TodoAdapter adapter = new TodoAdapter(new TodoAdapter.Controller() {
-        @Override
-        public void checked(long id, boolean on) {
-            apply(presenter.setCompleted((int) id, on));
-        }
-
-        @Override
-        public void selected(View view, long id) {
-            transTitle = view.findViewById(R.id.the_title);
-            transCheckbox = view.findViewById(R.id.is_completed);
-            apply(presenter.details((int) id));
-        }
-    });
-
     private final Random random = new Random();
     private ScreenIndexBinding layout;
     private View transTitle;
     private View transCheckbox;
+    private TodoAdapter adapter;
 
     private Executor background;
     private TodoRepository repo;
@@ -79,6 +66,19 @@ public class IndexFragment extends BaseFragment implements Index.View {
         this.presenter = presenter;
         this.screen = screen;
         this.list = list;
+        adapter = new TodoAdapter(list.state(), new TodoAdapter.Controller() {
+            @Override
+            public void checked(long id, boolean on) {
+                apply(presenter.setCompleted((int) id, on));
+            }
+
+            @Override
+            public void selected(View row, long id) {
+                transTitle = row.findViewById(R.id.the_title);
+                transCheckbox = row.findViewById(R.id.is_completed);
+                apply(presenter.details((int) id));
+            }
+        });
     }
 
     public void save(SaveState out) {
